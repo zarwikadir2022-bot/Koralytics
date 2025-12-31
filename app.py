@@ -1,21 +1,20 @@
+
 import streamlit as st
 import pandas as pd
 import requests
 import time
 
-# --- 1. إعدادات الصفحة ---
+# --- 1. إعدادات الصفحة (جعلناها WIDE لتناسب الجدول) ---
 st.set_page_config(
-    page_title="Koralytics VIP | نسخة المشتركين",
+    page_title="Koralytics VIP",
     page_icon="💎",
-    layout="centered" # جعلت التصميم متمحوراً في الوسط لتركيز الانتباه عند الدخول
+    layout="wide" # ضروري جداً لظهور الجدول كاملاً
 )
 
-# تنسيق CSS (تجميل زر الواتساب وحقل الدخول)
+# تنسيق CSS
 st.markdown("""
 <style>
     .stMetric {background-color: #f0f2f6; border: 1px solid #dce0e6; border-radius: 10px; padding: 10px;}
-    .login-container {padding: 30px; border-radius: 15px; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0,0,0,0.1);}
-    /* جعل زر الواتساب أخضر */
     a[href*="wa.me"] button {
         background-color: #25D366 !important;
         border-color: #25D366 !important;
@@ -24,63 +23,59 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. إعدادات المطور (Secrets) ---
+# --- 2. إعدادات المطور ---
 try:
     API_KEY = st.secrets["ODDS_API_KEY"]
 except:
     API_KEY = "YOUR_API_KEY"
 
-# رقم هاتفك للواتساب (غيّر هذا الرقم برقمك الحقيقي)
-MY_PHONE_NUMBER = "+21694928912" 
+MY_PHONE_NUMBER = "21600000000" # ضع رقمك هنا
 
-# --- 3. نظام الحماية والبوابة التسويقية ---
+# --- 3. نظام الحماية (مع توسيط الواجهة يدوياً) ---
 
 def check_password():
-    """التحقق من الدخول + واجهة البيع"""
     if st.session_state.get("password_correct", False):
         return True
 
-    # --- واجهة الدخول والتسويق ---
-    st.image("https://cdn-icons-png.flaticon.com/512/3593/3593510.png", width=80) # أيقونة معبرة
-    st.title("💎 Koralytics VIP")
-    st.markdown("### المنصة الأولى لتحليل الاحتمالات الرياضية بذكاء.")
-    
-    st.divider()
+    # --- حيلة التوسيط: نستخدم 3 أعمدة ونضع المحتوى في العمود الأوسط ---
+    col1, col2, col3 = st.columns([1, 2, 1]) 
 
-    # 1. منطقة البيع (لغير المشتركين)
-    st.info("💡 هذه النسخة للمشتركين فقط. هل تريد تحقيق أرباح مدروسة؟")
-    
-    wa_msg = "مرحبا، أرغب في الحصول على مفتاح اشتراك في Koralytics VIP"
-    wa_link = f"https://wa.me/{MY_PHONE_NUMBER}?text={wa_msg.replace(' ', '%20')}"
-    
-    # زر الواتساب
-    st.link_button("📲 اضغط هنا لشراء مفتاح اشتراك (WhatsApp)", wa_link, use_container_width=True)
-    
-    st.write("--- أو ---")
+    with col2: # العمل كله في العمود الأوسط
+        st.image("https://cdn-icons-png.flaticon.com/512/3593/3593510.png", width=80)
+        st.title("💎 Koralytics VIP")
+        st.markdown("### منصة التحليل الرياضي الذكي")
+        st.divider()
 
-    # 2. منطقة الدخول (للمشتركين الحاليين)
-    with st.form("login_form"):
-        st.write("🔐 **لديك مفتاح بالفعل؟ أدخله هنا:**")
-        password_input = st.text_input("مفتاح الدخول (Access Key):", type="password")
-        submit_btn = st.form_submit_button("تسجيل الدخول", use_container_width=True)
+        # زر الواتساب
+        st.info("💡 ليس لديك مفتاح؟ اشترك الآن لتحقيق الأرباح.")
+        wa_msg = "مرحبا، أرغب في مفتاح اشتراك Koralytics"
+        wa_link = f"https://wa.me/{MY_PHONE_NUMBER}?text={wa_msg.replace(' ', '%20')}"
+        st.link_button("📲 شراء مفتاح اشتراك (WhatsApp)", wa_link, use_container_width=True)
         
-        if submit_btn:
-            try:
-                valid_passwords = st.secrets["passwords"].values()
-                if password_input in valid_passwords:
-                    st.session_state["password_correct"] = True
-                    st.success("✅ مفتاح صحيح! جاري تحويلك...")
-                    time.sleep(0.5)
-                    st.rerun()
-                else:
-                    st.error("❌ المفتاح غير صحيح أو منتهي الصلاحية.")
-            except:
-                st.error("⚠️ خطأ في النظام: لم يتم ضبط كلمات المرور.")
+        st.write("--- أو ---")
+
+        # نموذج الدخول
+        with st.form("login_form"):
+            st.write("🔐 **دخول المشتركين:**")
+            password_input = st.text_input("مفتاح الدخول (Access Key):", type="password")
+            submit_btn = st.form_submit_button("دخول", use_container_width=True)
+            
+            if submit_btn:
+                try:
+                    valid_passwords = st.secrets["passwords"].values()
+                    if password_input in valid_passwords:
+                        st.session_state["password_correct"] = True
+                        st.success("✅ مفتاح صحيح!")
+                        time.sleep(0.5)
+                        st.rerun()
+                    else:
+                        st.error("❌ مفتاح خاطئ")
+                except:
+                    st.error("⚠️ خطأ في Secrets")
 
     return False
 
-# --- 4. دوال التطبيق (Backend) ---
-# (نفس الدوال السابقة تماماً)
+# --- 4. دوال البيانات (Backend) ---
 
 @st.cache_data(ttl=86400)
 def get_active_sports():
@@ -134,11 +129,9 @@ def process_data(raw_data):
         })
     return pd.DataFrame(matches)
 
-# --- 5. واجهة التطبيق الداخلية (تظهر بعد الدخول فقط) ---
+# --- 5. واجهة التطبيق الداخلية ---
+
 def show_app_content():
-    # تعديل بسيط: إعادة التخطيط لـ Wide بعد الدخول ليكون الجدول واسعاً
-    # ملاحظة: set_page_config يمكن استدعاؤها مرة واحدة فقط، لذا سنستخدم الأعمدة للتنسيق
-    
     with st.sidebar:
         st.header("💎 لوحة التحكم")
         if st.button("تسجيل الخروج"):
@@ -168,12 +161,13 @@ def show_app_content():
     else:
         df = process_data(data)
         if not df.empty:
-            st.caption("أفضل الفرص المتاحة حالياً:")
+            st.caption("جدول الاحتمالات الشامل:")
+            # هنا يظهر الجدول كاملاً لأن الصفحة Wide
             try:
                 st.dataframe(
                     df.style.background_gradient(subset=['فوز المضيف (1)', 'تعادل (X)', 'فوز الضيف (2)'], cmap='Greens')
                       .format("{:.2f}", subset=['فوز المضيف (1)', 'تعادل (X)', 'فوز الضيف (2)', 'Over 2.5', 'Under 2.5']),
-                    use_container_width=True
+                    use_container_width=True # هذا يجعل الجدول يتمدد ليملأ العرض
                 )
             except: st.dataframe(df, use_container_width=True)
 
@@ -222,7 +216,7 @@ def show_app_content():
                     elif implied < 30: st.warning("🔥 مخاطرة عالية")
                     else: st.info("⚖️ متوازنة")
 
-# --- 6. التشغيل الرئيسي ---
+# --- 6. التشغيل ---
 def main():
     if check_password():
         show_app_content()
