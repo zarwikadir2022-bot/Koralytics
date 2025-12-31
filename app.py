@@ -2,44 +2,41 @@ import streamlit as st
 import pandas as pd
 import requests
 
-# --- 1. إعدادات الصفحة والهوية البصرية ---
+# --- 1. إعدادات الصفحة ---
 st.set_page_config(
-    page_title="Koralytics | منصة التحليل الذكي",
+    page_title="Koralytics Pro | محلل المباريات والأهداف",
     page_icon="⚽",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    layout="wide"
 )
 
-# تخصيص CSS بسيط لجعل التطبيق أجمل
+# تنسيق CSS مخصص
 st.markdown("""
 <style>
-    .metric-card {background-color: #f0f2f6; border-radius: 10px; padding: 15px; text-align: center;}
-    .stButton>button {width: 100%; border-radius: 5px; background-color: #0083B8; color: white;}
+    .stMetric {background-color: #f8f9fa; padding: 10px; border-radius: 5px; border: 1px solid #dee2e6;}
+    .big-font {font-size: 18px !important; font-weight: bold;}
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. إعدادات API (الأمان) ---
-# ملاحظة للمطور: احصل على المفتاح من https://the-odds-api.com/
-# وضعه في st.secrets باسم "ODDS_API_KEY"
+# --- 2. إعداد المفتاح السري ---
 try:
     API_KEY = st.secrets["ODDS_API_KEY"]
 except:
-    # مفتاح افتراضي للتجربة فقط (يفضل تغييره)
-    API_KEY = "YOUR_API_KEY_HERE" 
+    # مفتاح مؤقت في حال نسيان وضعه في Secrets (لن يعمل إلا إذا استبدلته)
+    API_KEY = "YOUR_API_KEY_HERE"
 
-# --- 3. دوال المعالجة (Backend Logic) ---
+# --- 3. دوال المعالجة (Backend) ---
 
-@st.cache_data(ttl=3600) # تخزين مؤقت للبيانات لمدة ساعة لتوفير الطلبات
+@st.cache_data(ttl=3600)
 def fetch_odds(sport_key, region='eu'):
-    """جلب البيانات من المزود الخارجي"""
     if API_KEY == "YOUR_API_KEY_HERE":
-        return None, "يرجى إعداد مفتاح API أولاً"
+        return None, "يرجى وضع مفتاح API في Secrets"
         
     url = f'https://api.the-odds-api.com/v4/sports/{sport_key}/odds'
     params = {
         'apiKey': API_KEY,
         'regions': region,
-        'markets': 'h2h', # Head to Head (فوز - تعادل - خسارة)
+        # التحديث الهام: نطلب الفائز (h2h) ومجموع الأهداف (totals)
+        'markets': 'h2h,totals', 
         'oddsFormat': 'decimal'
     }
     try:
@@ -52,153 +49,178 @@ def fetch_odds(sport_key, region='eu'):
         return None, str(e)
 
 def process_data(raw_data):
-    """تحويل JSON المعقد إلى جدول بيانات نظيف"""
+    """تحويل JSON المعقد إلى جدول بيانات شامل"""
     matches = []
     for match in raw_data:
-        # نأخذ أول وكالة مراهنات متوفرة
+        # نحتاج لوجود مكاتب مراهنات
         if not match['bookmakers']: continue
         
+        # نأخذ أول وكالة كمرجع (عادة تكون Unibet أو William Hill)
         bookmaker = match['bookmakers'][0]
-        outcomes = bookmaker['markets'][0]['outcomes']
+        markets = bookmaker['markets']
         
-        # استخراج القيم (مع التعامل مع اختلاف ترتيب الأسماء)
-        home = match['home_team']
-        away = match['away_team']
+        # 1. استخراج الفائز (H2H)
+        h2h = next((m for m in markets if m['key'] == 'h2h'), None)
+        h_odd = d_odd = a_odd = 0.0
         
-        # البحث عن القيم بدقة
-        h_odd = next((x['price'] for x in outcomes if x['name'] == home), 1.0)
-        a_odd = next((x['price'] for x in outcomes if x['name'] == away), 1.0)
-        d_odd = next((x['price'] for x in outcomes if x['name'] == 'Draw'), 1.0)
+        if h2h:
+            outcomes = h2h['outcomes']
+            h_odd = next((x['price'] for x in outcomes if x['name'] == match['home_team']), 0)
+            a_odd = next((x['price'] for x in outcomes if x['name'] == match['away_team']), 0)
+            d_odd = next((x['price'] for x in outcomes if x['name'] == 'Draw'), 0)
+
+        # 2. استخراج الأهداف (Totals - Over/Under 2.5)
+        totals = next((m for m in markets if m['key'] == 'totals'), None)
+        over_25 = under_25 = 0.0
         
+        if totals:
+            outcomes = totals['outcomes']
+            # نبحث عن النقطة 2.5 تحديداً
+            over_25 = next((x['price'] for x in outcomes if x['name'] == 'Over' and x['point'] == 2.5), 0)
+            under_25 = next((x['price'] for x in outcomes if x['name'] == 'Under' and x['point'] == 2.5), 0)
+
         matches.append({
             "التاريخ": match['commence_time'][:10],
-            "المضيف": home,
-            "الضيف": away,
+            "المضيف": match['home_team'],
+            "الضيف": match['away_team'],
             "فوز المضيف (1)": h_odd,
             "تعادل (X)": d_odd,
-            "فوز الضيف (2)": a_odd
+            "فوز الضيف (2)": a_odd,
+            "Over 2.5": over_25,   # عمود جديد
+            "Under 2.5": under_25  # عمود جديد
         })
+        
     return pd.DataFrame(matches)
 
-def highlight_best_odds(data):
-    """دالة التنسيق الشرطي لتلوين أفضل احتمال"""
-    numeric_cols = ['فوز المضيف (1)', 'تعادل (X)', 'فوز الضيف (2)']
-    df_styler = pd.DataFrame('', index=data.index, columns=data.columns)
-    attr = 'background-color: #d4edda; color: #155724; font-weight: bold;'
-    
-    for idx, row in data.iterrows():
-        max_val = row[numeric_cols].max()
-        for col in numeric_cols:
-            if row[col] == max_val:
-                df_styler.at[idx, col] = attr
-    return df_styler
+def color_h2h(val):
+    """تلوين بسيط للأرقام"""
+    return 'color: black' 
 
 # --- 4. واجهة المستخدم (Frontend) ---
 
 def main():
-    # الشريط الجانبي
     with st.sidebar:
-        st.title("⚽ Koralytics")
-        st.caption("منصة تحليل احتمالات رياضية")
+        st.header("🏆 Koralytics Pro")
+        st.info("نسخة التحليل الشامل (فائز + أهداف)")
         
-        st.header("⚙️ الإعدادات")
         league_map = {
-            "الدوري الإنجليزي (EPL)": "soccer_epl",
-            "الدوري الإسباني (La Liga)": "soccer_spain_la_liga",
+            "الدوري الإنجليزي": "soccer_epl",
+            "الدوري الإسباني": "soccer_spain_la_liga",
             "دوري أبطال أوروبا": "soccer_uefa_champs_league",
             "الدوري الإيطالي": "soccer_italy_serie_a",
-            "الدوري الفرنسي": "soccer_france_ligue_one"
+            "الدوري الألماني": "soccer_germany_bundesliga"
         }
-        selected_league_name = st.selectbox("اختر البطولة", list(league_map.keys()))
-        selected_league_key = league_map[selected_league_name]
+        selected_league = st.selectbox("اختر الدوري", list(league_map.keys()))
+        sport_key = league_map[selected_league]
         
         st.divider()
-        st.subheader("💰 المحفظة الافتراضية")
-        budget = st.number_input("رصيدك ($)", value=1000.0, step=50.0)
+        budget = st.number_input("محفظة المحاكاة ($)", 100, 10000, 1000)
 
-    # المحتوى الرئيسي
-    st.title(f"تحليل {selected_league_name}")
-    
-    # 1. جلب وعرض البيانات
-    raw_data, error = fetch_odds(selected_league_key)
+    st.title(f"تحليل مباريات: {selected_league}")
+
+    # جلب البيانات
+    data, error = fetch_odds(sport_key)
     
     if error:
-        st.warning(f"⚠️ {error}")
-        st.info("نصيحة: تأكد من تفعيل مفتاح API في ملف secrets.")
-    elif not raw_data:
-        st.info("لا توجد مباريات متاحة حالياً في هذه البطولة.")
+        st.error(error)
+    elif not data:
+        st.warning("لا توجد مباريات متاحة حالياً.")
     else:
-        df = process_data(raw_data)
+        df = process_data(data)
         
-        # عرض الجدول الملون
-        st.subheader("📊 جدول الاحتمالات (الفرص الأفضل بالأخضر)")
+        # --- القسم 1: جدول البيانات الشامل ---
+        st.subheader("📊 جدول الاحتمالات (مقارنة شاملة)")
+        
+        # تلوين أفضل الاحتمالات في أعمدة الفوز
         st.dataframe(
-            df.style.apply(highlight_best_odds, axis=None).format("{:.2f}", subset=['فوز المضيف (1)', 'تعادل (X)', 'فوز الضيف (2)']),
+            df.style.background_gradient(subset=['فوز المضيف (1)', 'تعادل (X)', 'فوز الضيف (2)'], cmap='Greens')
+                    .format("{:.2f}", subset=['فوز المضيف (1)', 'تعادل (X)', 'فوز الضيف (2)', 'Over 2.5', 'Under 2.5']),
             use_container_width=True
         )
-        
+
         st.divider()
-        
-        # 2. منطقة المحاكاة والتحليل العميق
-        st.subheader("🧠 مختبر التحليل والمحاكاة")
+
+        # --- القسم 2: مختبر التحليل ---
+        st.subheader("⚽ مختبر المحاكاة (Match Lab)")
         
         c1, c2 = st.columns([1, 2])
         
         with c1:
-            st.markdown("#### اختر المباراة")
-            match_options = [f"{row['المضيف']} vs {row['الضيف']}" for i, row in df.iterrows()]
-            selected_match_str = st.selectbox("المباراة:", match_options)
+            # اختيار المباراة
+            match_list = [f"{row['المضيف']} vs {row['الضيف']}" for i, row in df.iterrows()]
+            selected_match_txt = st.selectbox("اختر المباراة للتحليل:", match_list)
             
-            # استخراج بيانات المباراة المختارة
-            host_team = selected_match_str.split(" vs ")[0]
-            match_row = df[df['المضيف'] == host_team].iloc[0]
+            # استخراج الصف الخاص بالمباراة
+            host = selected_match_txt.split(" vs ")[0]
+            match_row = df[df['المضيف'] == host].iloc[0]
             
-            st.markdown("#### قرارك؟")
-            prediction = st.radio("التوقع:", ["فوز المضيف", "تعادل", "فوز الضيف"])
+            st.markdown("---")
+            st.write("🛠 **أدوات الرهان:**")
+            bet_type = st.radio("نوع الرهان:", ["نتيجة المباراة (1X2)", "الأهداف (Over/Under)"])
             
-            # تحديد الـ Odd
-            if prediction == "فوز المضيف": 
-                user_odd = match_row['فوز المضيف (1)']
-                choice_name = match_row['المضيف']
-            elif prediction == "تعادل": 
-                user_odd = match_row['تعادل (X)']
-                choice_name = "تعادل"
-            else: 
-                user_odd = match_row['فوز الضيف (2)']
-                choice_name = match_row['الضيف']
+            user_odd = 0.0
+            selection = ""
+            
+            if bet_type == "نتيجة المباراة (1X2)":
+                choice = st.selectbox("توقعك:", ["فوز المضيف", "تعادل", "فوز الضيف"])
+                if choice == "فوز المضيف": user_odd = match_row['فوز المضيف (1)']
+                elif choice == "تعادل": user_odd = match_row['تعادل (X)']
+                else: user_odd = match_row['فوز الضيف (2)']
+                selection = choice
+                
+            else: # Over/Under
+                choice = st.selectbox("عدد الأهداف:", ["Over 2.5 (أكثر من هدفين)", "Under 2.5 (أقل من 3 أهداف)"])
+                if "Over" in choice:
+                    user_odd = match_row['Over 2.5']
+                    selection = "Over 2.5"
+                else:
+                    user_odd = match_row['Under 2.5']
+                    selection = "Under 2.5"
 
-            stake = st.slider("مبلغ الرهان ($):", 10.0, budget, 50.0)
+            stake = st.slider("مبلغ الرهان ($)", 10, int(budget), 50)
 
         with c2:
-            st.markdown("#### 📈 التحليل البصري والإحصائي")
+            st.markdown(f"### تحليل مباراة: {match_row['المضيف']} ضد {match_row['الضيف']}")
             
-            # الرسم البياني
-            chart_data = pd.DataFrame({
-                'النتيجة': [match_row['المضيف'], 'تعادل', match_row['الضيف']],
-                'الاحتمال (Odd)': [match_row['فوز المضيف (1)'], match_row['تعادل (X)'], match_row['فوز الضيف (2)']]
-            }).set_index('النتيجة')
-            
-            st.bar_chart(chart_data, color="#0083B8")
-            
-            # حساب الاحتمالية الضمنية (Implied Probability)
-            implied_prob = (1 / user_odd) * 100
-            potential_profit = (stake * user_odd) - stake
-            
-            # بطاقات المؤشرات (Metrics)
-            m1, m2, m3 = st.columns(3)
-            m1.metric("القيمة (Odd)", f"{user_odd}")
-            m2.metric("احتمالية الفوز (إحصائياً)", f"{implied_prob:.1f}%")
-            m3.metric("الربح الصافي المتوقع", f"{potential_profit:.2f}$", delta_color="normal")
-            
-            if st.button("محاكاة النتيجة الآن"):
-                st.toast(f"تم تسجيل توقعك لـ {choice_name} بـ {stake}$", icon="✅")
-                if implied_prob > 60:
-                    st.balloons()
-                    st.success("هذا خيار 'آمن' إحصائياً (احتمالية عالية)!")
-                elif implied_prob < 30:
-                    st.warning("هذا خيار 'مخاطرة عالية' (High Risk)!")
+            # حسابات المحلل
+            if user_odd > 0:
+                implied_prob = (1 / user_odd) * 100
+                potential_profit = (stake * user_odd) - stake
+                
+                # عرض البطاقات (Metrics)
+                k1, k2, k3 = st.columns(3)
+                k1.metric("القيمة (Odd)", f"{user_odd}")
+                k2.metric("احتمالية النجاح", f"{implied_prob:.1f}%")
+                k3.metric("الربح المتوقع", f"{potential_profit:.2f}$", delta_color="normal")
+                
+                # الرسم البياني للتحليل
+                st.write("📈 **مقارنة الفرص:**")
+                
+                if bet_type == "نتيجة المباراة (1X2)":
+                    chart_data = pd.DataFrame({
+                        'الخيار': [match_row['المضيف'], 'تعادل', match_row['الضيف']],
+                        'الاحتمال (Odd)': [match_row['فوز المضيف (1)'], match_row['تعادل (X)'], match_row['فوز الضيف (2)']]
+                    }).set_index('الخيار')
+                    st.bar_chart(chart_data, color="#0083B8")
                 else:
-                    st.info("رهان متوازن.")
+                    # رسم بياني للأهداف
+                    chart_data = pd.DataFrame({
+                        'الخيار': ['Over 2.5', 'Under 2.5'],
+                        'الاحتمال (Odd)': [match_row['Over 2.5'], match_row['Under 2.5']]
+                    }).set_index('الخيار')
+                    st.bar_chart(chart_data, color="#28a745") # لون أخضر للأهداف
+
+                # حكم المحلل (الذكاء الاصطناعي البسيط)
+                if user_odd == 0:
+                    st.warning("⚠️ لا توجد بيانات كافية لهذا السوق.")
+                elif implied_prob > 65:
+                    st.success("✅ **تحليل:** رهان آمن جداً (Low Risk). الأرقام تدعم هذا الخيار بقوة.")
+                elif implied_prob < 35:
+                    st.error("🔥 **تحليل:** رهان عالي المخاطرة (High Risk). العائد كبير لكن الفرصة ضئيلة.")
+                else:
+                    st.info("⚖️ **تحليل:** رهان متوازن.")
+            else:
+                st.warning("عذراً، بيانات هذا الرهان غير متوفرة لهذه المباراة.")
 
 if __name__ == '__main__':
     main()
