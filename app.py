@@ -7,45 +7,80 @@ import time
 st.set_page_config(
     page_title="Koralytics VIP | نسخة المشتركين",
     page_icon="💎",
-    layout="wide"
+    layout="centered" # جعلت التصميم متمحوراً في الوسط لتركيز الانتباه عند الدخول
 )
 
-# تنسيق CSS
+# تنسيق CSS (تجميل زر الواتساب وحقل الدخول)
 st.markdown("""
 <style>
     .stMetric {background-color: #f0f2f6; border: 1px solid #dce0e6; border-radius: 10px; padding: 10px;}
-    .stButton>button {width: 100%; border-radius: 8px;}
+    .login-container {padding: 30px; border-radius: 15px; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0,0,0,0.1);}
+    /* جعل زر الواتساب أخضر */
+    a[href*="wa.me"] button {
+        background-color: #25D366 !important;
+        border-color: #25D366 !important;
+        color: white !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. نظام الحماية ---
-def check_password():
-    if st.session_state.get("password_correct", False):
-        return True
-
-    st.header("🔒 منطقة المشتركين فقط")
-    st.write("أدخل مفتاح الاشتراك للمتابعة.")
-    password_input = st.text_input("Access Key:", type="password")
-    
-    if st.button("دخول"):
-        try:
-            valid_passwords = st.secrets["passwords"].values()
-            if password_input in valid_passwords:
-                st.session_state["password_correct"] = True
-                st.success("✅ تم الدخول!")
-                time.sleep(0.5)
-                st.rerun()
-            else:
-                st.error("❌ مفتاح خاطئ")
-        except:
-            st.error("لم يتم إعداد كلمات المرور في Secrets")
-    return False
-
-# --- 3. دوال المعالجة ---
+# --- 2. إعدادات المطور (Secrets) ---
 try:
     API_KEY = st.secrets["ODDS_API_KEY"]
 except:
     API_KEY = "YOUR_API_KEY"
+
+# رقم هاتفك للواتساب (غيّر هذا الرقم برقمك الحقيقي)
+MY_PHONE_NUMBER = "+21694928912" 
+
+# --- 3. نظام الحماية والبوابة التسويقية ---
+
+def check_password():
+    """التحقق من الدخول + واجهة البيع"""
+    if st.session_state.get("password_correct", False):
+        return True
+
+    # --- واجهة الدخول والتسويق ---
+    st.image("https://cdn-icons-png.flaticon.com/512/3593/3593510.png", width=80) # أيقونة معبرة
+    st.title("💎 Koralytics VIP")
+    st.markdown("### المنصة الأولى لتحليل الاحتمالات الرياضية بذكاء.")
+    
+    st.divider()
+
+    # 1. منطقة البيع (لغير المشتركين)
+    st.info("💡 هذه النسخة للمشتركين فقط. هل تريد تحقيق أرباح مدروسة؟")
+    
+    wa_msg = "مرحبا، أرغب في الحصول على مفتاح اشتراك في Koralytics VIP"
+    wa_link = f"https://wa.me/{MY_PHONE_NUMBER}?text={wa_msg.replace(' ', '%20')}"
+    
+    # زر الواتساب
+    st.link_button("📲 اضغط هنا لشراء مفتاح اشتراك (WhatsApp)", wa_link, use_container_width=True)
+    
+    st.write("--- أو ---")
+
+    # 2. منطقة الدخول (للمشتركين الحاليين)
+    with st.form("login_form"):
+        st.write("🔐 **لديك مفتاح بالفعل؟ أدخله هنا:**")
+        password_input = st.text_input("مفتاح الدخول (Access Key):", type="password")
+        submit_btn = st.form_submit_button("تسجيل الدخول", use_container_width=True)
+        
+        if submit_btn:
+            try:
+                valid_passwords = st.secrets["passwords"].values()
+                if password_input in valid_passwords:
+                    st.session_state["password_correct"] = True
+                    st.success("✅ مفتاح صحيح! جاري تحويلك...")
+                    time.sleep(0.5)
+                    st.rerun()
+                else:
+                    st.error("❌ المفتاح غير صحيح أو منتهي الصلاحية.")
+            except:
+                st.error("⚠️ خطأ في النظام: لم يتم ضبط كلمات المرور.")
+
+    return False
+
+# --- 4. دوال التطبيق (Backend) ---
+# (نفس الدوال السابقة تماماً)
 
 @st.cache_data(ttl=86400)
 def get_active_sports():
@@ -99,18 +134,21 @@ def process_data(raw_data):
         })
     return pd.DataFrame(matches)
 
-# --- 4. واجهة التطبيق ---
+# --- 5. واجهة التطبيق الداخلية (تظهر بعد الدخول فقط) ---
 def show_app_content():
+    # تعديل بسيط: إعادة التخطيط لـ Wide بعد الدخول ليكون الجدول واسعاً
+    # ملاحظة: set_page_config يمكن استدعاؤها مرة واحدة فقط، لذا سنستخدم الأعمدة للتنسيق
+    
     with st.sidebar:
-        st.header("💎 Koralytics VIP")
-        if st.button("تسجيل خروج"):
+        st.header("💎 لوحة التحكم")
+        if st.button("تسجيل الخروج"):
             st.session_state["password_correct"] = False
             st.rerun()
             
         st.divider()
         active = get_active_sports()
         if not active:
-            st.error("Check API Key")
+            st.error("API Error")
             return
             
         groups = sorted(list(set([s['group'] for s in active])))
@@ -122,7 +160,7 @@ def show_app_content():
         st.divider()
         budget = st.number_input("المحفظة ($)", 100.0, 10000.0, 1000.0)
 
-    st.title(f"تحليل: {lname}")
+    st.subheader(f"تحليل: {lname}")
     data, error = fetch_odds(lkey)
     
     if error: st.error(error)
@@ -130,8 +168,7 @@ def show_app_content():
     else:
         df = process_data(data)
         if not df.empty:
-            # الجدول
-            st.subheader("📊 جدول الفرص")
+            st.caption("أفضل الفرص المتاحة حالياً:")
             try:
                 st.dataframe(
                     df.style.background_gradient(subset=['فوز المضيف (1)', 'تعادل (X)', 'فوز الضيف (2)'], cmap='Greens')
@@ -141,22 +178,16 @@ def show_app_content():
             except: st.dataframe(df, use_container_width=True)
 
             st.divider()
-            
-            # قسم التحليل
-            st.subheader("🧠 المختبر")
+            st.subheader("🧠 مختبر المحاكاة")
             c1, c2 = st.columns([1, 2])
             
-            # --- العمود الأول: المدخلات ---
             with c1:
                 matches_txt = [f"{row['المضيف']} vs {row['الضيف']}" for i, row in df.iterrows()]
                 sel_match = st.selectbox("اختر المباراة:", matches_txt)
-                
                 host = sel_match.split(" vs ")[0]
                 match_row = df[df['المضيف'] == host].iloc[0]
                 
                 bet_type = st.radio("السوق:", ["1X2", "Over/Under"])
-                
-                # منطق اختيار الرهان
                 user_odd = 0.0
                 if bet_type == "1X2":
                     choice = st.selectbox("توقعك:", ["فوز المضيف", "تعادل", "فوز الضيف"])
@@ -170,42 +201,28 @@ def show_app_content():
                 
                 stake = st.number_input("الرهان ($):", 10.0, float(budget), 50.0)
 
-            # --- العمود الثاني: النتائج والرسم البياني ---
             with c2:
-                # 1. الرسم البياني (يظهر دائماً الآن!)
-                st.markdown(f"**مقارنة الفرص لـ: {sel_match}**")
-                
-                if bet_type == "1X2":
-                    chart_df = pd.DataFrame({
-                        'Option': [match_row['المضيف'], 'Draw', match_row['الضيف']],
-                        'Odd': [match_row['فوز المضيف (1)'], match_row['تعادل (X)'], match_row['فوز الضيف (2)']]
-                    }).set_index('Option')
-                    st.bar_chart(chart_df, color="#0083B8")
-                else:
-                    chart_df = pd.DataFrame({
-                        'Option': ['Over 2.5', 'Under 2.5'],
-                        'Odd': [match_row['Over 2.5'], match_row['Under 2.5']]
-                    }).set_index('Option')
-                    st.bar_chart(chart_df, color="#28a745")
-
-                # 2. بطاقات الأرقام
                 if user_odd > 0:
-                    st.divider()
+                    st.markdown(f"**تحليل {sel_match}**")
+                    if bet_type == "1X2":
+                        chart = pd.DataFrame({'Op': [match_row['المضيف'], 'Draw', match_row['الضيف']], 'Odd': [match_row['فوز المضيف (1)'], match_row['تعادل (X)'], match_row['فوز الضيف (2)']]}).set_index('Op')
+                        st.bar_chart(chart, color="#0083B8")
+                    else:
+                        chart = pd.DataFrame({'Op': ['Over 2.5', 'Under 2.5'], 'Odd': [match_row['Over 2.5'], match_row['Under 2.5']]}).set_index('Op')
+                        st.bar_chart(chart, color="#25D366")
+                    
                     implied = (1/user_odd)*100
                     profit = (stake*user_odd)-stake
-                    
                     k1, k2, k3 = st.columns(3)
-                    k1.metric("القيمة (Odd)", f"{user_odd}")
-                    k2.metric("الاحتمالية", f"{implied:.1f}%")
-                    k3.metric("الربح المتوقع", f"{profit:.2f}$")
+                    k1.metric("Odd", f"{user_odd}")
+                    k2.metric("Prob", f"{implied:.1f}%")
+                    k3.metric("Profit", f"{profit:.2f}$")
                     
-                    if implied > 60: st.success("✅ فرصة آمنة إحصائياً")
+                    if implied > 60: st.success("✅ فرصة قوية")
                     elif implied < 30: st.warning("🔥 مخاطرة عالية")
-                    else: st.info("⚖️ فرصة متوازنة")
-                else:
-                    st.warning("⚠️ لا توجد بيانات لهذا الرهان.")
+                    else: st.info("⚖️ متوازنة")
 
-# --- 5. التشغيل ---
+# --- 6. التشغيل الرئيسي ---
 def main():
     if check_password():
         show_app_content()
