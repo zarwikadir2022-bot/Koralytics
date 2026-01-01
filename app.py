@@ -67,13 +67,10 @@ def logout_user():
     st.session_state["current_key"] = None
     st.rerun()
 
-# --- 4. محرك الذكاء الاصطناعي (تم التعديل ليعمل دائماً) ---
+# --- 4. محرك الذكاء الاصطناعي ---
 
 def calculate_exact_goals(over_odd, under_odd):
-    # إذا كانت البيانات ناقصة (0)، نرجع None
-    if over_odd == 0 or under_odd == 0:
-        return {}, None
-
+    if over_odd == 0 or under_odd == 0: return {}, None
     prob_over = 1 / over_odd
     prob_under = 1 / under_odd
     margin = prob_over + prob_under
@@ -93,38 +90,32 @@ def ai_analyst_report(match_row, expected_goals):
     home = match_row['المضيف']
     away = match_row['الضيف']
     h_odd = match_row['فوز المضيف (1)']
-    d_odd = match_row['تعادل (X)']
     a_odd = match_row['فوز الضيف (2)']
     
-    # تفادي القسمة على صفر
     h_prob = (1/h_odd * 100) if h_odd > 0 else 0
     a_prob = (1/a_odd * 100) if a_odd > 0 else 0
     
     report = f"#### 🤖 تقرير التحليل الاستراتيجي\n\n"
-    
-    # 1. ميزان القوى (يعمل دائماً)
     report += "**1️⃣ ميزان القوى:**\n"
     if h_prob == 0 or a_prob == 0:
-        report += "• ⚠️ بيانات الفائز غير كاملة، التحليل قد يكون غير دقيق.\n"
+        report += "• ⚠️ بيانات الفائز غير كاملة.\n"
         risk = 5
     elif h_prob > 60:
-        report += f"• **هيمنة مطلقة:** البيانات ترشح **{home}** بقوة.\n"
+        report += f"• **هيمنة مطلقة:** البيانات ترشح **{home}**.\n"
         risk = 9
     elif a_prob > 60:
-        report += f"• **هيمنة مطلقة:** البيانات ترشح **{away}** بقوة.\n"
+        report += f"• **هيمنة مطلقة:** البيانات ترشح **{away}**.\n"
         risk = 9
     elif abs(h_prob - a_prob) < 10:
-        report += f"• **مباراة متكافئة:** الفريقان متقاربان جداً.\n"
+        report += f"• **مباراة متكافئة:** تقارب كبير في المستوى.\n"
         risk = 4
     else:
         fav = home if h_prob > a_prob else away
         report += f"• **أفضلية واضحة:** الكفة تميل لـ **{fav}**.\n"
         risk = 7
 
-    # 2. سيناريو الأهداف (يعمل فقط إذا توفرت البيانات)
     report += "\n**2️⃣ سيناريو الأهداف:**\n"
     score_pred = "غير متوفر"
-    
     if expected_goals:
         report += f"• **المعدل المتوقع:** {expected_goals:.1f} هدف.\n"
         if expected_goals >= 2.8:
@@ -137,20 +128,14 @@ def ai_analyst_report(match_row, expected_goals):
             report += "• **النمط:** متوازن.\n"
             score_pred = "2-0 أو 2-1" if h_prob > a_prob else "0-2 أو 1-2"
     else:
-        report += "• ⚠️ **تحذير:** بيانات الأهداف (Over/Under) غير متوفرة من المصدر لهذه المباراة، لذا لا يمكن توقع عدد الأهداف بدقة.\n"
+        report += "• ⚠️ بيانات الأهداف غير متوفرة.\n"
 
-    # 3. التوصية
     report += "\n**3️⃣ الخلاصة:**\n"
-    if risk >= 8:
-        report += f"✅ **خيار قوي:** فوز {home if h_prob > a_prob else away}.\n"
-    elif risk <= 4:
-        report += f"⚠️ **مخاطرة:** يُفضل تجنب الفائز واللعب على الأهداف (إن توفرت) أو التعادل.\n"
-    else:
-        report += f"⚖️ **خيار جيد:** فوز {home if h_prob > a_prob else away}.\n"
+    if risk >= 8: report += f"✅ **خيار قوي:** فوز {home if h_prob > a_prob else away}.\n"
+    elif risk <= 4: report += f"⚠️ **مخاطرة:** العب بحذر.\n"
+    else: report += f"⚖️ **خيار جيد:** فوز {home if h_prob > a_prob else away}.\n"
         
-    if expected_goals:
-        report += f"🎯 **النتيجة المتوقعة:** ({score_pred})\n"
-        
+    if expected_goals: report += f"🎯 **النتيجة المتوقعة:** ({score_pred})\n"
     report += f"🛡️ **درجة الأمان:** {risk}/10"
     return report
 
@@ -202,10 +187,16 @@ def fetch_odds(sport_key):
         return (r.json(), None) if r.status_code == 200 else (None, str(r.status_code))
     except Exception as e: return None, str(e)
 
+# --- 7. معالجة البيانات (تمت إعادة التاريخ هنا) ---
 def process_data(raw_data):
     matches = []
     for match in raw_data:
         if not match['bookmakers']: continue
+        
+        # استخراج الوقت وتنسيقه (YYYY-MM-DD HH:MM)
+        raw_date = match['commence_time']
+        formatted_date = raw_date.replace('T', ' ')[:16] # حذف الـ T والثواني
+        
         mkts = match['bookmakers'][0]['markets']
         h2h = next((m for m in mkts if m['key'] == 'h2h'), None)
         h_odd = d_odd = a_odd = 0.0
@@ -223,13 +214,14 @@ def process_data(raw_data):
             under_25 = next((x['price'] for x in outcomes if x['name'] == 'Under' and x['point'] == 2.5), 0)
         
         matches.append({
+            "التوقيت": formatted_date, # <-- تمت إعادته هنا
             "المضيف": match['home_team'], "الضيف": match['away_team'],
             "فوز المضيف (1)": h_odd, "تعادل (X)": d_odd, "فوز الضيف (2)": a_odd,
             "Over 2.5": over_25, "Under 2.5": under_25
         })
     return pd.DataFrame(matches)
 
-# --- 7. Main App ---
+# --- 8. Main App ---
 def show_app_content():
     manage_session_lock(st.session_state["current_key"])
 
@@ -255,7 +247,12 @@ def show_app_content():
     else:
         df = process_data(data)
         if not df.empty:
-            st.dataframe(df.style.background_gradient(subset=['فوز المضيف (1)', 'تعادل (X)', 'فوز الضيف (2)'], cmap='Greens').format("{:.2f}", subset=['فوز المضيف (1)', 'تعادل (X)', 'فوز الضيف (2)', 'Over 2.5', 'Under 2.5']), use_container_width=True)
+            # عرض الجدول مع التاريخ
+            st.dataframe(
+                df.style.background_gradient(subset=['فوز المضيف (1)', 'تعادل (X)', 'فوز الضيف (2)'], cmap='Greens')
+                  .format("{:.2f}", subset=['فوز المضيف (1)', 'تعادل (X)', 'فوز الضيف (2)', 'Over 2.5', 'Under 2.5']),
+                use_container_width=True
+            )
             st.divider()
             
             st.subheader("🧠 غرفة المحلل الذكي & حاسبة الربح")
@@ -271,7 +268,6 @@ def show_app_content():
                 bet_cat = st.radio("الرهان:", ["الفائز (1X2)", "Over/Under"], horizontal=True)
                 selected_odd = 0.0
                 
-                # التعامل مع القيم الصفرية (Missing Data) في القائمة المنسدلة
                 if bet_cat == "الفائز (1X2)":
                     opts = {}
                     if match_row['فوز المضيف (1)'] > 0: opts[f"فوز {match_row['المضيف']} ({match_row['فوز المضيف (1)']})"] = match_row['فوز المضيف (1)']
@@ -290,10 +286,9 @@ def show_app_content():
                     prof = ret - stake
                     st.markdown(f"""<div class="profit-box"><ul style="margin:0; padding-left:20px"><li>العائد: <b>{ret:.2f}$</b></li><li><b>صافي الربح: {prof:.2f}$ 🤑</b></li></ul></div>""", unsafe_allow_html=True)
                 else:
-                    st.warning("⚠️ لا توجد احتمالات متاحة لهذا السوق حالياً.")
+                    st.warning("⚠️ لا توجد احتمالات متاحة.")
 
             with c2:
-                # الحساب دائماً يعمل، حتى لو الأهداف 0
                 goals_probs, expected_goals = calculate_exact_goals(match_row['Over 2.5'], match_row['Under 2.5'])
                 
                 st.markdown('<div class="ai-box">', unsafe_allow_html=True)
