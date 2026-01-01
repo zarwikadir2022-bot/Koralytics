@@ -106,7 +106,7 @@ try:
 except:
     API_KEY = "YOUR_ODDS_KEY"
 
-MY_PHONE_NUMBER = "21600000000"
+MY_PHONE_NUMBER = "21694928912"
 
 # --- 4. إدارة الجلسات ---
 @st.cache_resource
