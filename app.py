@@ -28,7 +28,7 @@ try:
 except:
     API_KEY = "YOUR_API_KEY"
 
-MY_PHONE_NUMBER = "21600000000" # ضع رقمك هنا
+MY_PHONE_NUMBER = "21600000000"  # ضع رقم هاتفك هنا
 
 # --- 3. نظام إدارة الجلسات (Session Manager) ---
 
@@ -42,26 +42,28 @@ def manage_session_lock(key):
     active_sessions = get_active_sessions()
     current_time = time.time()
     
-    # ⚡ تعديل الوقت: دقيقة واحدة فقط (60 ثانية)
+    # ⚡ الوقت المحدد: دقيقة واحدة (60 ثانية)
     TIMEOUT_SECONDS = 60 
 
-    # 1. تنظيف الجلسات المنتهية
+    # 1. تنظيف الجلسات المنتهية (التي مر عليها أكثر من دقيقة)
     keys_to_remove = [k for k, last_active in active_sessions.items() if current_time - last_active > TIMEOUT_SECONDS]
     for k in keys_to_remove:
         del active_sessions[k]
 
-    # 2. التحقق من المفتاح
+    # 2. التحقق من المفتاح الحالي
     if key in active_sessions:
         last_seen = active_sessions[key]
-        # إذا كان المفتاح نشطاً وجديداً (أقل من دقيقة) ومستخدم من جهاز آخر
+        # إذا كان المفتاح نشطاً (أقل من دقيقة) ومستخدم من جهاز آخر
         if current_time - last_seen < TIMEOUT_SECONDS:
+            # إذا كان المستخدم هو نفسه (نفس المتصفح)، نسمح له بتحديث الوقت
             if st.session_state.get("current_key") == key:
                 active_sessions[key] = current_time # تحديث (Heartbeat)
                 return True, ""
             else:
+                # محاولة دخول من جهاز جديد والمفتاح مشغول
                 return False, "⚠️ هذا المفتاح مستخدم حالياً! انتظر دقيقة واحدة أو سجل الخروج من الجهاز الآخر."
 
-    # 3. تسجيل دخول جديد
+    # 3. تسجيل دخول جديد (المفتاح حر)
     active_sessions[key] = current_time
     return True, ""
 
@@ -71,7 +73,7 @@ def logout_user():
     if key:
         active_sessions = get_active_sessions()
         if key in active_sessions:
-            del active_sessions[key] # حذف فوري
+            del active_sessions[key] # حذف فوري من الذاكرة
     st.session_state["password_correct"] = False
     st.session_state["current_key"] = None
     st.rerun()
@@ -79,11 +81,13 @@ def logout_user():
 # --- 4. محرك الذكاء الاصطناعي والإحصاء ---
 
 def calculate_exact_goals(over_odd, under_odd):
+    """حساب احتمالات الأهداف بناءً على توزيع بواسون"""
     prob_over = 1 / over_odd
     prob_under = 1 / under_odd
     margin = prob_over + prob_under
     fair_prob_under = prob_under / margin
     
+    # استنتاج معدل الأهداف المتوقع
     if fair_prob_under > 0.5: expected_goals = 2.0
     elif fair_prob_under < 0.3: expected_goals = 3.2
     else: expected_goals = 2.7
@@ -95,6 +99,7 @@ def calculate_exact_goals(over_odd, under_odd):
     return goals_probs, expected_goals
 
 def ai_analyst_report(match_row, expected_goals):
+    """كتابة التقرير النصي"""
     home = match_row['المضيف']
     away = match_row['الضيف']
     h_odd = match_row['فوز المضيف (1)']
@@ -103,10 +108,10 @@ def ai_analyst_report(match_row, expected_goals):
     report = f"**🤖 تقرير المحلل الذكي:**\n\n"
     if h_odd < 1.5: report += f"• **الفائز:** البيانات ترشح **{home}** بقوة.\n"
     elif a_odd < 1.5: report += f"• **الفائز:** البيانات ترشح **{away}** بقوة.\n"
-    elif abs(h_odd - a_odd) < 0.5: report += f"• **الفائز:** مباراة صعبة (Derby). التعادل وارد.\n"
+    elif abs(h_odd - a_odd) < 0.5: report += f"• **الفائز:** مباراة متكافئة وصعبة (Derby). التعادل وارد.\n"
     else:
         fav = home if h_odd < a_odd else away
-        report += f"• **الفائز:** الأفضلية الطفيفة لـ **{fav}**.\n"
+        report += f"• **الفائز:** الأفضلية لـ **{fav}**.\n"
         
     report += f"• **معدل الأهداف:** {expected_goals} هدف.\n"
     if expected_goals > 2.9: report += "• **النمط:** مباراة مفتوحة وهجومية (Over).\n"
@@ -114,19 +119,19 @@ def ai_analyst_report(match_row, expected_goals):
     else: report += "• **النمط:** نسق متوسط.\n"
     return report
 
-# --- 5. نظام الدخول والحماية ---
+# --- 5. نظام الدخول والحماية (النسخة المصححة) ---
 
 def check_password():
-    # تحديث النشاط إذا كان مسجلاً
+    # 1. تحديث النشاط (Heartbeat) إذا كان مسجلاً للدخول
     if st.session_state.get("password_correct", False):
         key = st.session_state.get("current_key")
         is_allowed, msg = manage_session_lock(key)
         if not is_allowed:
             st.error(msg)
-            st.stop()
+            st.stop() # إيقاف التنفيذ فوراً
         return True
 
-    # واجهة الدخول
+    # 2. واجهة الدخول
     col1, col2, col3 = st.columns([1, 2, 1]) 
     with col2: 
         st.image("https://cdn-icons-png.flaticon.com/512/3593/3593510.png", width=80)
@@ -134,18 +139,26 @@ def check_password():
         st.markdown("### المنصة الذكية للتحليل الرياضي")
         st.divider()
 
-        st.info("💡 المفتاح محمي: يعمل على جهاز واحد في نفس الوقت.")
+        st.info("💡 المفتاح محمي: يعمل على جهاز واحد (مدة القفل: دقيقة).")
         wa_link = f"https://wa.me/{MY_PHONE_NUMBER}?text=شراء مفتاح"
         st.link_button("📲 شراء مفتاح اشتراك (WhatsApp)", wa_link, use_container_width=True)
         st.write("--- أو ---")
 
         with st.form("login_form"):
             password_input = st.text_input("مفتاح الدخول:", type="password")
-            if st.form_submit_button("دخول", use_container_width=True):
-                try:
+            submit_btn = st.form_submit_button("دخول", use_container_width=True)
+            
+            if submit_btn:
+                # التحقق المباشر (بدون Try/Except عامة)
+                if "passwords" not in st.secrets:
+                    st.error("⚠️ خطأ: لم يتم إعداد كلمات المرور في Secrets.")
+                else:
                     valid_passwords = st.secrets["passwords"].values()
+                    
                     if password_input in valid_passwords:
+                        # فحص القفل
                         is_allowed, error_msg = manage_session_lock(password_input)
+                        
                         if is_allowed:
                             st.session_state["password_correct"] = True
                             st.session_state["current_key"] = password_input
@@ -156,10 +169,10 @@ def check_password():
                             st.error(error_msg)
                     else:
                         st.error("❌ مفتاح خاطئ")
-                except: st.error("⚠️ خطأ في Secrets")
+
     return False
 
-# --- 6. دوال البيانات ---
+# --- 6. دوال البيانات API ---
 
 @st.cache_data(ttl=86400)
 def get_active_sports():
@@ -208,19 +221,19 @@ def process_data(raw_data):
 # --- 7. التطبيق الرئيسي ---
 
 def show_app_content():
-    # تحديث النشاط (Heartbeat)
+    # تحديث النشاط (تجديد القفل)
     manage_session_lock(st.session_state["current_key"])
 
     with st.sidebar:
         st.header("💎 لوحة التحكم")
         if st.button("🔴 تسجيل الخروج"): logout_user()
         
-        # --- زر الطوارئ للمدير (Admin Reset) ---
-        if st.session_state.get("current_key") == "admin2026": # استبدلها بمفتاحك
+        # أداة المدير (للطوارئ)
+        if st.session_state.get("current_key") == "admin2026": 
             st.warning("⚠️ أدوات المدير")
-            if st.button("فك حظر الجلسات (Reset)"):
+            if st.button("تصفير الجلسات (Reset)"):
                 get_active_sessions().clear()
-                st.success("تم تصفير الجلسات!")
+                st.success("تم!")
         
         st.divider()
         active = get_active_sports()
@@ -253,7 +266,6 @@ def show_app_content():
                 host = sel_match.split(" vs ")[0]
                 match_row = df[df['المضيف'] == host].iloc[0]
                 
-                # إعدادات المحاكاة
                 stake = st.number_input("الرهان ($):", 10.0, float(budget), 50.0)
                 
                 # حسابات AI
