@@ -7,8 +7,8 @@ from scipy.stats import poisson
 
 # --- 1. إعدادات الصفحة ---
 st.set_page_config(
-    page_title="Koralytics AI | Ticket Master",
-    page_icon="🧾",
+    page_title="Koralytics AI | Magic Wand",
+    page_icon="🪄",
     layout="wide"
 )
 
@@ -23,6 +23,14 @@ st.markdown("""
     .ticket-item {border-bottom: 1px solid #555; padding-bottom: 5px; margin-bottom: 5px; font-size: 0.9em;}
     a[href*="wa.me"] button {background-color: #25D366 !important; border-color: #25D366 !important; color: white !important;}
     .stButton>button {border-radius: 8px;}
+    
+    /* تنسيق الزر السحري */
+    .magic-btn button {
+        background: linear-gradient(45deg, #833ab4, #fd1d1d, #fcb045);
+        color: white !important;
+        border: none;
+        font-weight: bold;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -148,7 +156,7 @@ def check_password():
     with col2: 
         st.image("https://cdn-icons-png.flaticon.com/512/3593/3593510.png", width=80)
         st.title("💎 Koralytics AI")
-        st.info("💡 الإصدار العاشر: Ticket Master")
+        st.info("💡 الإصدار الحادي عشر: Magic Wand")
         wa_link = f"https://wa.me/{MY_PHONE_NUMBER}?text=شراء مفتاح"
         st.link_button("📲 شراء مفتاح", wa_link, use_container_width=True)
         
@@ -223,7 +231,75 @@ def show_app_content():
     with st.sidebar:
         st.header("💎 لوحة التحكم")
         
-        # 1. Ticket Section
+        # --- 1. القائمة العلوية (اختيار البطولة) ---
+        if st.button("🔴 تسجيل الخروج"): logout_user()
+        if st.session_state.get("current_key") == "admin2026": 
+            if st.button("تصفير الجلسات"): get_active_sessions().clear(); st.success("تم!")
+            
+        st.divider()
+        active = get_active_sports()
+        if not active: st.error("API Error"); return
+        groups = sorted(list(set([s['group'] for s in active])))
+        grp = st.selectbox("الرياضة:", groups)
+        leagues = {s['title']: s['key'] for s in active if s['group'] == grp}
+        lname = st.selectbox("البطولة:", list(leagues.keys()))
+        lkey = leagues[lname]
+        
+        # --- جلب البيانات أولاً لكي تعمل العصا السحرية ---
+        data, error = fetch_odds(lkey)
+        df_matches = pd.DataFrame()
+        if not error and data:
+            df_matches = process_data(data)
+
+        st.divider()
+
+        # --- 2. المولد السحري (Magic Wand) ---
+        st.markdown('<div class="magic-btn">', unsafe_allow_html=True)
+        if st.button("🤖 اصنع لي ورقة رابحة (أفضل 3)", use_container_width=True):
+            if not df_matches.empty:
+                st.session_state["my_ticket"] = [] # تنظيف الورقة
+                candidates = []
+                
+                # البحث عن أكثر الفرص أماناً
+                for i, row in df_matches.iterrows():
+                    # فوز المضيف
+                    if row['فوز المضيف (1)'] > 1.05: # تفادي الأخطاء
+                        prob_h = 1 / row['فوز المضيف (1)']
+                        if prob_h > 0.60: # شرط الأمان 60%
+                            candidates.append({
+                                "match": f"{row['المضيف']} vs {row['الضيف']}",
+                                "pick": f"فوز {row['المضيف']}",
+                                "odd": row['فوز المضيف (1)'],
+                                "prob": prob_h
+                            })
+                    # فوز الضيف
+                    if row['فوز الضيف (2)'] > 1.05:
+                        prob_a = 1 / row['فوز الضيف (2)']
+                        if prob_a > 0.60:
+                            candidates.append({
+                                "match": f"{row['المضيف']} vs {row['الضيف']}",
+                                "pick": f"فوز {row['الضيف']}",
+                                "odd": row['فوز الضيف (2)'],
+                                "prob": prob_a
+                            })
+                
+                # ترتيب حسب الأقوى (Highest Probability) وأخذ أفضل 3
+                if candidates:
+                    candidates.sort(key=lambda x: x['prob'], reverse=True)
+                    top_3 = candidates[:3]
+                    st.session_state["my_ticket"].extend(top_3)
+                    st.success("✨ تم توليد الورقة السحرية!")
+                    time.sleep(0.5)
+                    st.rerun()
+                else:
+                    st.warning("⚠️ لا توجد مباريات مضمونة جداً (Prob > 60%) في هذه البطولة حالياً.")
+            else:
+                st.warning("لا توجد بيانات.")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        st.divider()
+
+        # --- 3. عرض الورقة (Ticket View) ---
         st.subheader("🧾 ورقتي (My Ticket)")
         if st.session_state["my_ticket"]:
             total_odd = 1.0
@@ -247,34 +323,21 @@ def show_app_content():
                 st.session_state["my_ticket"] = []
                 st.rerun()
         else:
-            st.info("الورقة فارغة. أضف مباريات!")
+            st.info("الورقة فارغة.")
             
-        st.divider()
-        if st.button("🔴 تسجيل الخروج"): logout_user()
-        if st.session_state.get("current_key") == "admin2026": 
-            if st.button("تصفير الجلسات"): get_active_sessions().clear(); st.success("تم!")
-            
-        st.divider()
-        active = get_active_sports()
-        if not active: st.error("API Error"); return
-        groups = sorted(list(set([s['group'] for s in active])))
-        grp = st.selectbox("الرياضة:", groups)
-        leagues = {s['title']: s['key'] for s in active if s['group'] == grp}
-        lname = st.selectbox("البطولة:", list(leagues.keys()))
-        lkey = leagues[lname]
-        
         st.divider()
         budget = st.number_input("💵 ميزانيتك الكلية ($):", 100.0, 50000.0, 500.0, step=50.0)
         show_gold = st.checkbox("🔥 عرض الفرص الذهبية فقط")
 
     # ------------------ MAIN CONTENT ------------------
     st.subheader(f"📊 تحليل: {lname}")
-    data, error = fetch_odds(lkey)
     
     if error: st.error(error)
     elif not data: st.warning("لا توجد مباريات.")
     else:
-        df = process_data(data)
+        # البيانات موجودة بالفعل في df_matches
+        df = df_matches
+        
         if show_gold and not df.empty:
             df = df[((1/df['فوز المضيف (1)']) > 0.65) | ((1/df['فوز الضيف (2)']) > 0.65)]
         
@@ -293,10 +356,9 @@ def show_app_content():
                 matches_txt = [f"{row['المضيف']} vs {row['الضيف']}" for i, row in df.iterrows()]
                 sel_match = st.selectbox("1️⃣ اختر المباراة:", matches_txt)
                 
-                # --- تصحيح تعريف المتغيرات هنا ---
                 host = sel_match.split(" vs ")[0]
                 match_row = df[df['المضيف'] == host].iloc[0]
-                away = match_row['الضيف'] # <--- تم تعريف الضيف هنا
+                away = match_row['الضيف']
 
                 goals_probs, expected_goals = calculate_exact_goals(match_row['Over 2.5'], match_row['Under 2.5'])
                 ai_text, risk_score = ai_analyst_report(match_row, expected_goals)
@@ -324,10 +386,9 @@ def show_app_content():
                         selected_odd = opts[selection_name]
 
                 if selected_odd > 0:
-                    # زر الإضافة للورقة
                     if st.button(f"➕ أضف للورقة (@ {selected_odd})", use_container_width=True):
                         st.session_state["my_ticket"].append({
-                            "match": f"{host} vs {away}", # الآن المتغير away معرف ويعمل
+                            "match": f"{host} vs {away}",
                             "pick": selection_name,
                             "odd": selected_odd
                         })
