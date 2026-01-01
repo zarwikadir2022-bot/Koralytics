@@ -7,8 +7,8 @@ from scipy.stats import poisson
 
 # --- 1. إعدادات الصفحة ---
 st.set_page_config(
-    page_title="Koralytics AI | Manager",
-    page_icon="🧠",
+    page_title="Koralytics AI | Ticket Master",
+    page_icon="🧾",
     layout="wide"
 )
 
@@ -16,28 +16,13 @@ st.set_page_config(
 st.markdown("""
 <style>
     .stMetric {background-color: #f0f2f6; border: 1px solid #dce0e6; border-radius: 10px; padding: 10px;}
-    .ai-box {
-        background-color: #ffffff; 
-        padding: 20px; 
-        border-radius: 12px; 
-        border-left: 6px solid #0083B8; 
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        margin-bottom: 20px;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
+    .ai-box {background-color: #ffffff; padding: 20px; border-radius: 12px; border-left: 6px solid #0083B8; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px;}
     .profit-box {background-color: #d1e7dd; padding: 15px; border-radius: 10px; border: 1px solid #badbcc; color: #0f5132; margin-top: 10px;}
-    .advisor-box {
-        background-color: #fff3cd; 
-        padding: 15px; 
-        border-radius: 10px; 
-        border: 1px solid #ffecb5; 
-        color: #856404; 
-        margin-top: 15px; 
-        font-size: 0.95em;
-    }
+    .advisor-box {background-color: #fff3cd; padding: 10px; border-radius: 8px; border: 1px solid #ffecb5; color: #856404; margin-top: 10px; font-size: 0.9em;}
+    .ticket-box {background-color: #2b313e; color: white; padding: 15px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #4a4e69;}
+    .ticket-item {border-bottom: 1px solid #555; padding-bottom: 5px; margin-bottom: 5px; font-size: 0.9em;}
     a[href*="wa.me"] button {background-color: #25D366 !important; border-color: #25D366 !important; color: white !important;}
     .stButton>button {border-radius: 8px;}
-    h4 {color: #0083B8;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -49,7 +34,7 @@ except:
 
 MY_PHONE_NUMBER = "21600000000"
 
-# --- 3. إدارة الجلسات ---
+# --- 3. إدارة الجلسات والورقة ---
 @st.cache_resource
 def get_active_sessions(): return {}
 
@@ -74,10 +59,13 @@ def logout_user():
     if key and key in get_active_sessions(): del get_active_sessions()[key]
     st.session_state["password_correct"] = False
     st.session_state["current_key"] = None
+    st.session_state["my_ticket"] = [] 
     st.rerun()
 
-# --- 4. محرك الذكاء الاصطناعي ---
+if "my_ticket" not in st.session_state:
+    st.session_state["my_ticket"] = []
 
+# --- 4. محرك الذكاء الاصطناعي ---
 def calculate_exact_goals(over_odd, under_odd):
     if over_odd == 0 or under_odd == 0: return {}, None
     prob_over = 1 / over_odd
@@ -100,14 +88,12 @@ def ai_analyst_report(match_row, expected_goals):
     away = match_row['الضيف']
     h_odd = match_row['فوز المضيف (1)']
     a_odd = match_row['فوز الضيف (2)']
-    
     h_prob = (1/h_odd * 100) if h_odd > 0 else 0
     a_prob = (1/a_odd * 100) if a_odd > 0 else 0
     
     report = f"#### 🤖 تقرير التحليل الاستراتيجي\n\n"
     report += "**1️⃣ ميزان القوى:**\n"
-    
-    risk = 5 # الافتراضي
+    risk = 5 
     
     if h_prob == 0 or a_prob == 0:
         report += "• ⚠️ بيانات الفائز غير كاملة.\n"
@@ -119,7 +105,7 @@ def ai_analyst_report(match_row, expected_goals):
         report += f"• **هيمنة مطلقة:** البيانات ترشح **{away}**.\n"
         risk = 9
     elif abs(h_prob - a_prob) < 10:
-        report += f"• **مباراة متكافئة:** تقارب كبير في المستوى.\n"
+        report += f"• **مباراة متكافئة:** تقارب كبير.\n"
         risk = 4
     else:
         fav = home if h_prob > a_prob else away
@@ -132,13 +118,13 @@ def ai_analyst_report(match_row, expected_goals):
         report += f"• **المعدل المتوقع:** {expected_goals:.1f} هدف.\n"
         if expected_goals >= 2.8:
             report += "• **النمط:** مباراة مفتوحة (Over).\n"
-            score_pred = "2-1 أو 3-1" if h_prob > a_prob else "1-2 أو 1-3"
+            score_pred = "2-1 / 3-1" if h_prob > a_prob else "1-2 / 1-3"
         elif expected_goals <= 2.1:
             report += "• **النمط:** مباراة مغلقة (Under).\n"
-            score_pred = "1-0 أو 2-0" if h_prob > a_prob else "0-1 أو 0-2"
+            score_pred = "1-0 / 2-0" if h_prob > a_prob else "0-1 / 0-2"
         else:
             report += "• **النمط:** متوازن.\n"
-            score_pred = "2-0 أو 2-1" if h_prob > a_prob else "0-2 أو 1-2"
+            score_pred = "2-0 / 2-1" if h_prob > a_prob else "0-2 / 1-2"
     else:
         report += "• ⚠️ بيانات الأهداف غير متوفرة.\n"
 
@@ -148,8 +134,6 @@ def ai_analyst_report(match_row, expected_goals):
     else: report += f"⚖️ **خيار جيد:** فوز {home if h_prob > a_prob else away}.\n"
         
     if expected_goals: report += f"🎯 **النتيجة المتوقعة:** ({score_pred})\n"
-    report += f"🛡️ **درجة الأمان:** {risk}/10"
-    
     return report, risk
 
 # --- 5. الحماية ---
@@ -164,7 +148,7 @@ def check_password():
     with col2: 
         st.image("https://cdn-icons-png.flaticon.com/512/3593/3593510.png", width=80)
         st.title("💎 Koralytics AI")
-        st.info("💡 Pro Version: Manager Edition")
+        st.info("💡 الإصدار العاشر: Ticket Master")
         wa_link = f"https://wa.me/{MY_PHONE_NUMBER}?text=شراء مفتاح"
         st.link_button("📲 شراء مفتاح", wa_link, use_container_width=True)
         
@@ -205,10 +189,7 @@ def process_data(raw_data):
     matches = []
     for match in raw_data:
         if not match['bookmakers']: continue
-        
-        # تنسيق الوقت
-        raw_date = match['commence_time']
-        formatted_date = raw_date.replace('T', ' ')[:16]
+        raw_date = match['commence_time'].replace('T', ' ')[:16]
         
         mkts = match['bookmakers'][0]['markets']
         h2h = next((m for m in mkts if m['key'] == 'h2h'), None)
@@ -227,7 +208,7 @@ def process_data(raw_data):
             under_25 = next((x['price'] for x in outcomes if x['name'] == 'Under' and x['point'] == 2.5), 0)
         
         matches.append({
-            "التوقيت": formatted_date,
+            "التوقيت": raw_date,
             "المضيف": match['home_team'], "الضيف": match['away_team'],
             "فوز المضيف (1)": h_odd, "تعادل (X)": d_odd, "فوز الضيف (2)": a_odd,
             "Over 2.5": over_25, "Under 2.5": under_25
@@ -238,11 +219,41 @@ def process_data(raw_data):
 def show_app_content():
     manage_session_lock(st.session_state["current_key"])
 
+    # ------------------ SIDEBAR (TICKET & CONTROLS) ------------------
     with st.sidebar:
         st.header("💎 لوحة التحكم")
+        
+        # 1. Ticket Section
+        st.subheader("🧾 ورقتي (My Ticket)")
+        if st.session_state["my_ticket"]:
+            total_odd = 1.0
+            
+            st.markdown('<div class="ticket-box">', unsafe_allow_html=True)
+            for idx, item in enumerate(st.session_state["my_ticket"]):
+                st.markdown(f"""
+                <div class="ticket-item">
+                    <b>{idx+1}. {item['match']}</b><br>
+                    🎯 {item['pick']} <span style="float:right; color:#4caf50; font-weight:bold;">x{item['odd']}</span>
+                </div>
+                """, unsafe_allow_html=True)
+                total_odd *= item['odd']
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            st.metric("الضارب الكلي (Total Odd)", f"{total_odd:.2f}")
+            ticket_stake = st.number_input("مبلغ الورقة ($):", 1.0, 1000.0, 10.0)
+            st.success(f"💸 الربح المحتمل: {ticket_stake * total_odd:.2f}$")
+            
+            if st.button("🗑️ مسح الورقة", use_container_width=True):
+                st.session_state["my_ticket"] = []
+                st.rerun()
+        else:
+            st.info("الورقة فارغة. أضف مباريات!")
+            
+        st.divider()
         if st.button("🔴 تسجيل الخروج"): logout_user()
         if st.session_state.get("current_key") == "admin2026": 
             if st.button("تصفير الجلسات"): get_active_sessions().clear(); st.success("تم!")
+            
         st.divider()
         active = get_active_sports()
         if not active: st.error("API Error"); return
@@ -253,15 +264,10 @@ def show_app_content():
         lkey = leagues[lname]
         
         st.divider()
-        # --- المدخلات المالية الجديدة ---
         budget = st.number_input("💵 ميزانيتك الكلية ($):", 100.0, 50000.0, 500.0, step=50.0)
-        
-        # --- فلتر الفرص الذهبية ---
-        st.markdown("---")
         show_gold = st.checkbox("🔥 عرض الفرص الذهبية فقط")
-        if show_gold:
-            st.caption("يظهر المباريات التي نسبة فوز أحد الفريقين فيها > 65%.")
 
+    # ------------------ MAIN CONTENT ------------------
     st.subheader(f"📊 تحليل: {lname}")
     data, error = fetch_odds(lkey)
     
@@ -269,13 +275,9 @@ def show_app_content():
     elif not data: st.warning("لا توجد مباريات.")
     else:
         df = process_data(data)
-        
-        # تطبيق الفلتر الذهبي
         if show_gold and not df.empty:
             df = df[((1/df['فوز المضيف (1)']) > 0.65) | ((1/df['فوز الضيف (2)']) > 0.65)]
-            if df.empty:
-                st.warning("⚠️ لا توجد فرص ذهبية (مضمونة) حالياً في هذه البطولة.")
-
+        
         if not df.empty:
             st.dataframe(
                 df.style.background_gradient(subset=['فوز المضيف (1)', 'تعادل (X)', 'فوز الضيف (2)'], cmap='Greens')
@@ -284,79 +286,70 @@ def show_app_content():
             )
             st.divider()
             
-            st.subheader("🧠 غرفة المحلل الذكي & المستشار المالي")
+            st.subheader("🧠 غرفة التحليل وبناء الورقة")
             c1, c2 = st.columns([1, 1.3])
             
-            # --- العمود 1: الحسابات والمستشار ---
             with c1:
                 matches_txt = [f"{row['المضيف']} vs {row['الضيف']}" for i, row in df.iterrows()]
                 sel_match = st.selectbox("1️⃣ اختر المباراة:", matches_txt)
+                
+                # --- تصحيح تعريف المتغيرات هنا ---
                 host = sel_match.split(" vs ")[0]
                 match_row = df[df['المضيف'] == host].iloc[0]
+                away = match_row['الضيف'] # <--- تم تعريف الضيف هنا
 
-                # جلب تحليل AI ودرجة المخاطرة أولاً لنستخدمها في التوصية
                 goals_probs, expected_goals = calculate_exact_goals(match_row['Over 2.5'], match_row['Under 2.5'])
                 ai_text, risk_score = ai_analyst_report(match_row, expected_goals)
 
-                st.markdown("### 💰 حاسبة الربح والإدارة")
-                bet_cat = st.radio("نوع الرهان:", ["الفائز (1X2)", "Over/Under"], horizontal=True)
+                # --- 💰 قسم الاختيار ---
+                st.markdown("### 🎯 اختر نتيجتك:")
+                bet_cat = st.radio("السوق:", ["الفائز (1X2)", "Over/Under"], horizontal=True)
                 selected_odd = 0.0
+                selection_name = ""
                 
                 if bet_cat == "الفائز (1X2)":
                     opts = {}
-                    if match_row['فوز المضيف (1)'] > 0: opts[f"فوز {match_row['المضيف']} ({match_row['فوز المضيف (1)']})"] = match_row['فوز المضيف (1)']
-                    if match_row['تعادل (X)'] > 0: opts[f"تعادل ({match_row['تعادل (X)']})"] = match_row['تعادل (X)']
-                    if match_row['فوز الضيف (2)'] > 0: opts[f"فوز {match_row['الضيف']} ({match_row['فوز الضيف (2)']})"] = match_row['فوز الضيف (2)']
+                    if match_row['فوز المضيف (1)'] > 0: opts[f"فوز {match_row['المضيف']}"] = match_row['فوز المضيف (1)']
+                    if match_row['تعادل (X)'] > 0: opts[f"تعادل"] = match_row['تعادل (X)']
+                    if match_row['فوز الضيف (2)'] > 0: opts[f"فوز {match_row['الضيف']}"] = match_row['فوز الضيف (2)']
+                    if opts:
+                        selection_name = st.selectbox("النتيجة:", list(opts.keys()))
+                        selected_odd = opts[selection_name]
                 else:
                     opts = {}
-                    if match_row['Over 2.5'] > 0: opts[f"Over 2.5 ({match_row['Over 2.5']})"] = match_row['Over 2.5']
-                    if match_row['Under 2.5'] > 0: opts[f"Under 2.5 ({match_row['Under 2.5']})"] = match_row['Under 2.5']
-                
-                if opts:
-                    choice = st.selectbox("النتيجة:", list(opts.keys()))
-                    selected_odd = opts[choice]
-                    stake = st.number_input("مبلغ الرهان ($):", min_value=1.0, value=10.0, step=1.0)
-                    ret = stake * selected_odd
-                    prof = ret - stake
-                    
-                    # 1. صندوق الربح (الأخضر)
-                    st.markdown(f"""<div class="profit-box"><ul style="margin:0; padding-left:20px"><li>العائد: <b>{ret:.2f}$</b></li><li><b>صافي الربح: {prof:.2f}$ 🤑</b></li></ul></div>""", unsafe_allow_html=True)
-                    
-                    # 2. مستشار إدارة رأس المال (الأصفر) - جديد!
-                    rec_percent = 0
-                    rec_msg = ""
-                    if risk_score >= 8: 
-                        rec_percent = 5
-                        rec_msg = "فرصة قوية جداً."
-                    elif risk_score >= 6: 
-                        rec_percent = 3
-                        rec_msg = "فرصة جيدة، لكن كن حذراً."
-                    else: 
-                        rec_percent = 1
-                        rec_msg = "مخاطرة عالية! لا تغامر."
-                    
-                    rec_amount = budget * (rec_percent / 100)
-                    
-                    st.markdown(f"""
-                    <div class="advisor-box">
-                        <b>💡 مستشار إدارة رأس المال:</b><br>
-                        بناءً على ميزانيتك ({budget}$) ودرجة أمان هذه المباراة ({risk_score}/10):<br>
-                        • <b>النصيحة:</b> {rec_msg}<br>
-                        • <b>المبلغ المقترح:</b> لا تتجاوز <b>{rec_amount:.1f}$</b> ({rec_percent}% من رأس المال).
-                    </div>
-                    """, unsafe_allow_html=True)
+                    if match_row['Over 2.5'] > 0: opts["Over 2.5"] = match_row['Over 2.5']
+                    if match_row['Under 2.5'] > 0: opts["Under 2.5"] = match_row['Under 2.5']
+                    if opts:
+                        selection_name = st.selectbox("النتيجة:", list(opts.keys()))
+                        selected_odd = opts[selection_name]
 
+                if selected_odd > 0:
+                    # زر الإضافة للورقة
+                    if st.button(f"➕ أضف للورقة (@ {selected_odd})", use_container_width=True):
+                        st.session_state["my_ticket"].append({
+                            "match": f"{host} vs {away}", # الآن المتغير away معرف ويعمل
+                            "pick": selection_name,
+                            "odd": selected_odd
+                        })
+                        st.toast(f"✅ تمت إضافة {selection_name} للورقة!", icon="🧾")
+                        time.sleep(0.5)
+                        st.rerun() 
+                    
+                    st.caption("أو احسبها كمباراة فردية:")
+                    stake = st.number_input("رهان فردي ($):", 1.0, 1000.0, 10.0)
+                    st.markdown(f"**الربح:** {(stake * selected_odd):.2f}$")
+                    
+                    rec_msg = "مغامرة!" if risk_score < 5 else "آمنة."
+                    st.markdown(f'<div class="advisor-box">💡 نصيحة المدير: هذه الفرصة تُصنف كـ <b>{rec_msg}</b> ({risk_score}/10).</div>', unsafe_allow_html=True)
                 else:
-                    st.warning("⚠️ الاحتمالات غير متوفرة.")
+                    st.warning("الاحتمالات غير متوفرة.")
 
-            # --- العمود 2: تقرير AI والرسوم ---
             with c2:
                 st.markdown('<div class="ai-box">', unsafe_allow_html=True)
-                st.markdown(ai_text) # عرض التقرير الذي جلبناه سابقاً
+                st.markdown(ai_text)
                 st.markdown('</div>', unsafe_allow_html=True)
 
                 if match_row['فوز المضيف (1)'] > 0:
-                    st.markdown("**🔵 احتمالية الفوز:**")
                     h_prob = (1 / match_row['فوز المضيف (1)']) * 100
                     d_prob = (1 / match_row['تعادل (X)']) * 100
                     a_prob = (1 / match_row['فوز الضيف (2)']) * 100
