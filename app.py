@@ -8,50 +8,50 @@ from scipy.stats import poisson
 
 # --- 1. إعدادات الصفحة ---
 st.set_page_config(
-    page_title="Koralytics AI | Pro Dark",
-    page_icon="⚽",
+    page_title="Koralytics AI | Ice Edition",
+    page_icon="❄️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- 2. التصميم العصري (CSS Design System) ---
+# --- 2. التصميم البارد (Ice Theme CSS) ---
 st.markdown("""
 <style>
-    /* 1. الخلفية العامة (Dark Theme) */
+    /* 1. الخلفية "الباردة" (Cool Blue Gradient) */
     .stApp {
-        background: radial-gradient(circle at 10% 20%, #0f2027 0%, #203a43 60%, #2c5364 100%);
-        color: #e0e0e0;
+        background: linear-gradient(135deg, #1c2841 0%, #2b3c5a 100%);
+        color: #f0f0f0;
     }
     
     /* 2. تحسين القائمة الجانبية */
     section[data-testid="stSidebar"] {
-        background-color: rgba(0, 0, 0, 0.4);
-        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        background-color: rgba(0, 0, 0, 0.2);
+        border-right: 1px solid rgba(255, 255, 255, 0.05);
     }
     
     /* 3. العناوين والنصوص */
     h1, h2, h3 {
-        color: #00d2ff !important;
+        color: #6dd5fa !important; /* لون سماوي بارد */
         font-family: 'Segoe UI', sans-serif;
-        text-shadow: 0px 0px 10px rgba(0, 210, 255, 0.5);
+        text-shadow: 0px 0px 10px rgba(109, 213, 250, 0.3);
     }
     
     /* 4. الصناديق الزجاجية (Glassmorphism) */
     .glass-box {
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.07);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 15px;
+        border-radius: 16px;
         padding: 20px;
         margin-bottom: 20px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     }
 
     /* 5. صندوق الذكاء الاصطناعي */
     .ai-box {
-        background: linear-gradient(135deg, rgba(0,0,0,0.6) 0%, rgba(20,30,48,0.8) 100%);
-        border-left: 5px solid #00d2ff;
+        background: linear-gradient(to right, rgba(0,0,0,0.3), rgba(0,0,0,0.1));
+        border-right: 5px solid #6dd5fa;
         padding: 20px;
         border-radius: 10px;
         margin-bottom: 15px;
@@ -60,37 +60,38 @@ st.markdown("""
 
     /* 6. صندوق الورقة (Ticket) */
     .ticket-box {
-        background: linear-gradient(45deg, #11998e, #38ef7d); /* Green Gradient */
-        color: #000;
+        background: linear-gradient(45deg, #2980b9, #6dd5fa); /* Ice Blue Gradient */
+        color: white;
         font-weight: bold;
         padding: 15px;
         border-radius: 12px;
         margin-bottom: 10px;
-        box-shadow: 0 0 15px rgba(56, 239, 125, 0.4);
+        box-shadow: 0 0 15px rgba(109, 213, 250, 0.3);
     }
-    .ticket-item {border-bottom: 1px solid rgba(0,0,0,0.2); padding-bottom: 5px; margin-bottom: 5px;}
+    .ticket-item {border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 5px; margin-bottom: 5px;}
 
     /* 7. صندوق الأرباح والمستشار */
-    .profit-box {background-color: rgba(46, 204, 113, 0.2); border: 1px solid #2ecc71; color: #2ecc71; padding: 10px; border-radius: 8px; text-align: center;}
-    .advisor-box {background-color: rgba(241, 196, 15, 0.2); border: 1px solid #f1c40f; color: #f1c40f; padding: 10px; border-radius: 8px; font-size: 0.9em;}
+    .profit-box {background-color: rgba(46, 204, 113, 0.15); border: 1px solid #2ecc71; color: #2ecc71; padding: 10px; border-radius: 8px; text-align: center;}
+    .advisor-box {background-color: rgba(241, 196, 15, 0.15); border: 1px solid #f1c40f; color: #f1c40f; padding: 10px; border-radius: 8px; font-size: 0.9em;}
     
     /* 8. الأزرار */
     div.stButton > button {
-        background: linear-gradient(90deg, #00d2ff 0%, #3a7bd5 100%);
-        color: white;
-        border: none;
+        background: linear-gradient(90deg, #243B55 0%, #141E30 100%);
+        border: 1px solid #6dd5fa;
+        color: #6dd5fa;
         border-radius: 8px;
         font-weight: bold;
         transition: 0.3s;
     }
     div.stButton > button:hover {
-        transform: scale(1.02);
-        box-shadow: 0 0 15px rgba(0, 210, 255, 0.6);
+        background: #6dd5fa;
+        color: #1c2841;
+        box-shadow: 0 0 15px rgba(109, 213, 250, 0.6);
     }
     
     /* 9. الجداول */
     div[data-testid="stDataFrame"] {
-        background-color: rgba(0, 0, 0, 0.3);
+        background-color: rgba(0, 0, 0, 0.2);
         border-radius: 10px;
         padding: 10px;
     }
@@ -310,13 +311,11 @@ def fetch_odds(sport_key):
 
 def process_data_with_logos(raw_data):
     matches = []
-    # --- بداية الجاسوس (DEBUG) ---
     debug_names = []
     
     for match in raw_data:
         if not match['bookmakers']: continue
         raw_date = match['commence_time'].replace('T', ' ')[:16]
-        
         debug_names.append(f"{match['home_team']} 🆚 {match['away_team']}")
 
         mkts = match['bookmakers'][0]['markets']
@@ -404,7 +403,6 @@ def main():
     st.title(f"⚽ {lname}")
     st.markdown(f"**تحليل مباشر ومتقدم للمباريات باستخدام الذكاء الاصطناعي**")
     
-    # Magic Wand Button (Centered)
     col_mw1, col_mw2, col_mw3 = st.columns([1,2,1])
     with col_mw2:
         if st.button("🪄 العصا السحرية (اختر لي أفضل 3 مباريات)", use_container_width=True):
@@ -448,7 +446,6 @@ def main():
 
             st.markdown("---")
             
-            # Analysis Section in Glass Box
             st.markdown("<div class='glass-box'>", unsafe_allow_html=True)
             c1, c2 = st.columns([1, 1.5])
             with c1:
@@ -492,12 +489,21 @@ def main():
                 rec_amount = budget * (3 if risk > 7 else 1) / 100
                 st.markdown(f"""<div class="advisor-box">💡 <b>المستشار المالي:</b> الفرصة {rec_msg} ({risk}/10).<br>المبلغ المقترح: {rec_amount:.1f}$</div>""", unsafe_allow_html=True)
 
+                # --- ⚠️ إضافة الرسوم البيانية هنا ---
+                st.markdown("#### 📊 الرسوم البيانية")
+                
+                # 1. رسم احتمالات الفوز
                 if row['1'] > 0:
                     h_prob = (1 / row['1']) * 100
                     d_prob = (1 / row['X']) * 100
                     a_prob = (1 / row['2']) * 100
                     chart_df = pd.DataFrame({'Team': [row['المضيف'], 'Draw', row['الضيف']], 'Prob': [h_prob, d_prob, a_prob]}).set_index('Team')
-                    st.bar_chart(chart_df, color=["#00d2ff"]) # Blue Bars
+                    st.bar_chart(chart_df, color=["#6dd5fa"]) # أزرق بارد
+                
+                # 2. رسم توقعات الأهداف (الذي اختفى)
+                if probs:
+                    goals_df = pd.DataFrame(list(probs.items()), columns=['Goals', 'Probability']).set_index('Goals')
+                    st.bar_chart(goals_df, color=["#ff6b6b"]) # أحمر للتباين
 
             st.markdown("</div>", unsafe_allow_html=True)
 
