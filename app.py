@@ -18,6 +18,7 @@ st.markdown("""
     .stMetric {background-color: #f0f2f6; border: 1px solid #dce0e6; border-radius: 10px; padding: 10px;}
     .ai-box {background-color: #e8f4f8; padding: 15px; border-radius: 10px; border-left: 5px solid #0083B8; margin-bottom: 20px;}
     a[href*="wa.me"] button {background-color: #25D366 !important; border-color: #25D366 !important; color: white !important;}
+    .stButton>button {border-radius: 8px;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -27,12 +28,57 @@ try:
 except:
     API_KEY = "YOUR_API_KEY"
 
-MY_PHONE_NUMBER = "21600000000" 
+MY_PHONE_NUMBER = "21600000000" # ضع رقمك هنا
 
-# --- 3. محرك الذكاء الاصطناعي والإحصاء ---
+# --- 3. نظام إدارة الجلسات (Session Manager) ---
+
+@st.cache_resource
+def get_active_sessions():
+    """ذاكرة مشتركة لتخزين المفاتيح النشطة"""
+    return {}
+
+def manage_session_lock(key):
+    """التحقق من المفتاح + تنظيف الجلسات القديمة"""
+    active_sessions = get_active_sessions()
+    current_time = time.time()
+    
+    # ⚡ تعديل الوقت: دقيقة واحدة فقط (60 ثانية)
+    TIMEOUT_SECONDS = 60 
+
+    # 1. تنظيف الجلسات المنتهية
+    keys_to_remove = [k for k, last_active in active_sessions.items() if current_time - last_active > TIMEOUT_SECONDS]
+    for k in keys_to_remove:
+        del active_sessions[k]
+
+    # 2. التحقق من المفتاح
+    if key in active_sessions:
+        last_seen = active_sessions[key]
+        # إذا كان المفتاح نشطاً وجديداً (أقل من دقيقة) ومستخدم من جهاز آخر
+        if current_time - last_seen < TIMEOUT_SECONDS:
+            if st.session_state.get("current_key") == key:
+                active_sessions[key] = current_time # تحديث (Heartbeat)
+                return True, ""
+            else:
+                return False, "⚠️ هذا المفتاح مستخدم حالياً! انتظر دقيقة واحدة أو سجل الخروج من الجهاز الآخر."
+
+    # 3. تسجيل دخول جديد
+    active_sessions[key] = current_time
+    return True, ""
+
+def logout_user():
+    """تسجيل خروج وتحرير المفتاح فوراً"""
+    key = st.session_state.get("current_key")
+    if key:
+        active_sessions = get_active_sessions()
+        if key in active_sessions:
+            del active_sessions[key] # حذف فوري
+    st.session_state["password_correct"] = False
+    st.session_state["current_key"] = None
+    st.rerun()
+
+# --- 4. محرك الذكاء الاصطناعي والإحصاء ---
 
 def calculate_exact_goals(over_odd, under_odd):
-    """حساب احتمالات الأهداف الدقيقة (0-4+)"""
     prob_over = 1 / over_odd
     prob_under = 1 / under_odd
     margin = prob_over + prob_under
@@ -46,56 +92,75 @@ def calculate_exact_goals(over_odd, under_odd):
     for k in range(5):
         goals_probs[k] = poisson.pmf(k, expected_goals) * 100
     goals_probs['4+'] = (1 - poisson.cdf(3, expected_goals)) * 100
-    
     return goals_probs, expected_goals
 
 def ai_analyst_report(match_row, expected_goals):
-    """توليد التقرير النصي"""
     home = match_row['المضيف']
     away = match_row['الضيف']
     h_odd = match_row['فوز المضيف (1)']
     a_odd = match_row['فوز الضيف (2)']
     
     report = f"**🤖 تقرير المحلل الذكي:**\n\n"
-    
-    # تحليل الفائز
-    if h_odd < 1.5: report += f"• **النتيجة:** البيانات ترشح **{home}** باكتساح.\n"
-    elif a_odd < 1.5: report += f"• **النتيجة:** البيانات ترشح **{away}** باكتساح.\n"
-    elif abs(h_odd - a_odd) < 0.5: report += f"• **النتيجة:** مباراة صعبة جداً (Derby). التعادل وارد.\n"
+    if h_odd < 1.5: report += f"• **الفائز:** البيانات ترشح **{home}** بقوة.\n"
+    elif a_odd < 1.5: report += f"• **الفائز:** البيانات ترشح **{away}** بقوة.\n"
+    elif abs(h_odd - a_odd) < 0.5: report += f"• **الفائز:** مباراة صعبة (Derby). التعادل وارد.\n"
     else:
         fav = home if h_odd < a_odd else away
-        report += f"• **النتيجة:** الأفضلية لـ **{fav}**.\n"
+        report += f"• **الفائز:** الأفضلية الطفيفة لـ **{fav}**.\n"
         
-    # تحليل الأهداف
     report += f"• **معدل الأهداف:** {expected_goals} هدف.\n"
-    if expected_goals > 2.9: report += "• **النمط:** مباراة هجومية مفتوحة (Over).\n"
+    if expected_goals > 2.9: report += "• **النمط:** مباراة مفتوحة وهجومية (Over).\n"
     elif expected_goals < 2.2: report += "• **النمط:** مباراة دفاعية مغلقة (Under).\n"
     else: report += "• **النمط:** نسق متوسط.\n"
-        
     return report
 
-# --- 4. نظام الحماية ---
+# --- 5. نظام الدخول والحماية ---
+
 def check_password():
-    if st.session_state.get("password_correct", False): return True
+    # تحديث النشاط إذا كان مسجلاً
+    if st.session_state.get("password_correct", False):
+        key = st.session_state.get("current_key")
+        is_allowed, msg = manage_session_lock(key)
+        if not is_allowed:
+            st.error(msg)
+            st.stop()
+        return True
+
+    # واجهة الدخول
     col1, col2, col3 = st.columns([1, 2, 1]) 
-    with col2:
+    with col2: 
         st.image("https://cdn-icons-png.flaticon.com/512/3593/3593510.png", width=80)
         st.title("💎 Koralytics AI")
-        st.info("💡 التحليل بالذكاء الاصطناعي وتوقعات الأهداف.")
-        wa_link = f"https://wa.me/{MY_PHONE_NUMBER}?text=مرحبا"
-        st.link_button("📲 شراء مفتاح اشتراك", wa_link, use_container_width=True)
+        st.markdown("### المنصة الذكية للتحليل الرياضي")
+        st.divider()
+
+        st.info("💡 المفتاح محمي: يعمل على جهاز واحد في نفس الوقت.")
+        wa_link = f"https://wa.me/{MY_PHONE_NUMBER}?text=شراء مفتاح"
+        st.link_button("📲 شراء مفتاح اشتراك (WhatsApp)", wa_link, use_container_width=True)
+        st.write("--- أو ---")
+
         with st.form("login_form"):
             password_input = st.text_input("مفتاح الدخول:", type="password")
             if st.form_submit_button("دخول", use_container_width=True):
                 try:
-                    if password_input in st.secrets["passwords"].values():
-                        st.session_state["password_correct"] = True
-                        st.rerun()
-                    else: st.error("❌ خطأ")
-                except: st.error("⚠️ خطأ Secrets")
+                    valid_passwords = st.secrets["passwords"].values()
+                    if password_input in valid_passwords:
+                        is_allowed, error_msg = manage_session_lock(password_input)
+                        if is_allowed:
+                            st.session_state["password_correct"] = True
+                            st.session_state["current_key"] = password_input
+                            st.success("✅ تم الدخول!")
+                            time.sleep(0.5)
+                            st.rerun()
+                        else:
+                            st.error(error_msg)
+                    else:
+                        st.error("❌ مفتاح خاطئ")
+                except: st.error("⚠️ خطأ في Secrets")
     return False
 
-# --- 5. دوال البيانات ---
+# --- 6. دوال البيانات ---
+
 @st.cache_data(ttl=86400)
 def get_active_sports():
     if API_KEY == "YOUR_API_KEY": return []
@@ -140,11 +205,24 @@ def process_data(raw_data):
         })
     return pd.DataFrame(matches)
 
-# --- 6. الواجهة الرئيسية ---
+# --- 7. التطبيق الرئيسي ---
+
 def show_app_content():
+    # تحديث النشاط (Heartbeat)
+    manage_session_lock(st.session_state["current_key"])
+
     with st.sidebar:
-        st.header("💎 التحكم")
-        if st.button("خروج"): st.session_state["password_correct"] = False; st.rerun()
+        st.header("💎 لوحة التحكم")
+        if st.button("🔴 تسجيل الخروج"): logout_user()
+        
+        # --- زر الطوارئ للمدير (Admin Reset) ---
+        if st.session_state.get("current_key") == "admin2026": # استبدلها بمفتاحك
+            st.warning("⚠️ أدوات المدير")
+            if st.button("فك حظر الجلسات (Reset)"):
+                get_active_sessions().clear()
+                st.success("تم تصفير الجلسات!")
+        
+        st.divider()
         active = get_active_sports()
         if not active: st.error("API Error"); return
         groups = sorted(list(set([s['group'] for s in active])))
@@ -169,56 +247,46 @@ def show_app_content():
             st.subheader("🧠 غرفة المحلل الذكي (AI Room)")
             
             c1, c2 = st.columns([1, 1.5])
-            
-            # --- العمود الأول: التقرير النصي ---
             with c1:
                 matches_txt = [f"{row['المضيف']} vs {row['الضيف']}" for i, row in df.iterrows()]
-                sel_match = st.selectbox("اختر المباراة للتحليل:", matches_txt)
+                sel_match = st.selectbox("اختر المباراة:", matches_txt)
                 host = sel_match.split(" vs ")[0]
                 match_row = df[df['المضيف'] == host].iloc[0]
                 
-                # حسابات الأهداف
+                # إعدادات المحاكاة
+                stake = st.number_input("الرهان ($):", 10.0, float(budget), 50.0)
+                
+                # حسابات AI
                 goals_probs = {}
                 expected_goals = 0
                 if match_row['Over 2.5'] > 0:
                     goals_probs, expected_goals = calculate_exact_goals(match_row['Over 2.5'], match_row['Under 2.5'])
-                    
                     st.markdown('<div class="ai-box">', unsafe_allow_html=True)
                     st.markdown(ai_analyst_report(match_row, expected_goals))
                     st.markdown('</div>', unsafe_allow_html=True)
-                else:
-                    st.warning("بيانات الأهداف غير متوفرة.")
+                else: st.warning("بيانات الأهداف غير متوفرة.")
 
-            # --- العمود الثاني: الرسوم البيانية (تمت إعادة الرسم المفقود) ---
             with c2:
-                # 1. رسم احتمالات الفوز (Win Probability) - عاد من جديد!
-                st.write("🔵 **احتمالية الفوز (Win Probability):**")
-                
-                # نحول الـ Odds إلى نسبة مئوية (Prob = 1/Odd) لتكون منطقية في الرسم
+                # 1. رسم احتمالات الفوز (أزرق)
+                st.markdown("**🔵 احتمالية الفوز (Win Probability):**")
                 h_prob = (1 / match_row['فوز المضيف (1)']) * 100
                 d_prob = (1 / match_row['تعادل (X)']) * 100
                 a_prob = (1 / match_row['فوز الضيف (2)']) * 100
                 
-                win_chart_df = pd.DataFrame({
-                    'Team': [match_row['المضيف'], 'Draw', match_row['الضيف']],
-                    'Probability (%)': [h_prob, d_prob, a_prob]
-                }).set_index('Team')
-                
-                st.bar_chart(win_chart_df, color="#0083B8") # لون أزرق
+                chart_df = pd.DataFrame({'Team': [match_row['المضيف'], 'Draw', match_row['الضيف']], 'Prob': [h_prob, d_prob, a_prob]}).set_index('Team')
+                st.bar_chart(chart_df, color="#0083B8")
 
-                st.divider()
-
-                # 2. رسم الأهداف (Exact Goals)
+                # 2. رسم توقعات الأهداف (أحمر)
                 if goals_probs:
-                    st.write("🔴 **توقعات عدد الأهداف (Exact Goals):**")
-                    goals_df = pd.DataFrame(list(goals_probs.items()), columns=['الأهداف', 'الاحتمال %'])
-                    goals_df.set_index('الأهداف', inplace=True)
-                    st.bar_chart(goals_df, color="#FF4B4B") # لون أحمر
+                    st.divider()
+                    st.markdown("**🔴 توقعات الأهداف الدقيقة (Exact Goals):**")
+                    goals_df = pd.DataFrame(list(goals_probs.items()), columns=['الأهداف', 'Prob']).set_index('الأهداف')
+                    st.bar_chart(goals_df, color="#FF4B4B")
                     
-                    best_goal = max(goals_probs, key=goals_probs.get)
-                    st.caption(f"السيناريو الأقوى: {best_goal} أهداف.")
+                    best_g = max(goals_probs, key=goals_probs.get)
+                    st.caption(f"السيناريو الأقوى: {best_g} أهداف في المباراة.")
 
-# --- التشغيل ---
+# --- 8. التشغيل ---
 def main():
     if check_password(): show_app_content()
 
