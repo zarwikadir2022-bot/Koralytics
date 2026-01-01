@@ -372,7 +372,7 @@ def check_password():
         st.markdown("**بوابة التحليل الرياضي الذكي**")
         st.markdown("</div>", unsafe_allow_html=True)
         
-        wa_link = f"https://wa.me/{MY_PHONE_NUMBER}?text=شراء مفتاح"
+        wa_link = f"https://wa.me/{+21694928912}?text=شراء مفتاح"
         st.link_button("📲 شراء مفتاح (VIP)", wa_link, use_container_width=True)
         
         with st.form("login_form"):
