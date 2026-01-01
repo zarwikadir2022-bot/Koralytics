@@ -8,26 +8,96 @@ from scipy.stats import poisson
 
 # --- 1. إعدادات الصفحة ---
 st.set_page_config(
-    page_title="Koralytics AI | Debug V16.2",
-    page_icon="🕵️‍♂️",
-    layout="wide"
+    page_title="Koralytics AI | Pro Dark",
+    page_icon="⚽",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# تنسيق CSS
+# --- 2. التصميم العصري (CSS Design System) ---
 st.markdown("""
 <style>
-    .stMetric {background-color: #f0f2f6; border: 1px solid #dce0e6; border-radius: 10px; padding: 10px;}
-    .ai-box {background-color: #ffffff; padding: 25px; border-radius: 15px; border-right: 6px solid #0083B8; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.8;}
-    .ticket-box {background-color: #2b313e; color: white; padding: 15px; border-radius: 10px; margin-bottom: 10px;}
-    .ticket-item {border-bottom: 1px solid #555; padding-bottom: 5px; margin-bottom: 5px; font-size: 0.9em;}
-    .profit-box {background-color: #d1e7dd; padding: 15px; border-radius: 10px; border: 1px solid #badbcc; color: #0f5132; margin-top: 10px;}
-    .advisor-box {background-color: #fff3cd; padding: 10px; border-radius: 8px; border: 1px solid #ffecb5; color: #856404; margin-top: 10px; font-size: 0.9em;}
-    a[href*="wa.me"] button {background-color: #25D366 !important; border-color: #25D366 !important; color: white !important;}
-    .magic-btn button {background: linear-gradient(45deg, #833ab4, #fd1d1d, #fcb045); color: white !important; border: none; font-weight: bold;}
+    /* 1. الخلفية العامة (Dark Theme) */
+    .stApp {
+        background: radial-gradient(circle at 10% 20%, #0f2027 0%, #203a43 60%, #2c5364 100%);
+        color: #e0e0e0;
+    }
+    
+    /* 2. تحسين القائمة الجانبية */
+    section[data-testid="stSidebar"] {
+        background-color: rgba(0, 0, 0, 0.4);
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    /* 3. العناوين والنصوص */
+    h1, h2, h3 {
+        color: #00d2ff !important;
+        font-family: 'Segoe UI', sans-serif;
+        text-shadow: 0px 0px 10px rgba(0, 210, 255, 0.5);
+    }
+    
+    /* 4. الصناديق الزجاجية (Glassmorphism) */
+    .glass-box {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    /* 5. صندوق الذكاء الاصطناعي */
+    .ai-box {
+        background: linear-gradient(135deg, rgba(0,0,0,0.6) 0%, rgba(20,30,48,0.8) 100%);
+        border-left: 5px solid #00d2ff;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 15px;
+        color: #ffffff;
+    }
+
+    /* 6. صندوق الورقة (Ticket) */
+    .ticket-box {
+        background: linear-gradient(45deg, #11998e, #38ef7d); /* Green Gradient */
+        color: #000;
+        font-weight: bold;
+        padding: 15px;
+        border-radius: 12px;
+        margin-bottom: 10px;
+        box-shadow: 0 0 15px rgba(56, 239, 125, 0.4);
+    }
+    .ticket-item {border-bottom: 1px solid rgba(0,0,0,0.2); padding-bottom: 5px; margin-bottom: 5px;}
+
+    /* 7. صندوق الأرباح والمستشار */
+    .profit-box {background-color: rgba(46, 204, 113, 0.2); border: 1px solid #2ecc71; color: #2ecc71; padding: 10px; border-radius: 8px; text-align: center;}
+    .advisor-box {background-color: rgba(241, 196, 15, 0.2); border: 1px solid #f1c40f; color: #f1c40f; padding: 10px; border-radius: 8px; font-size: 0.9em;}
+    
+    /* 8. الأزرار */
+    div.stButton > button {
+        background: linear-gradient(90deg, #00d2ff 0%, #3a7bd5 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: bold;
+        transition: 0.3s;
+    }
+    div.stButton > button:hover {
+        transform: scale(1.02);
+        box-shadow: 0 0 15px rgba(0, 210, 255, 0.6);
+    }
+    
+    /* 9. الجداول */
+    div[data-testid="stDataFrame"] {
+        background-color: rgba(0, 0, 0, 0.3);
+        border-radius: 10px;
+        padding: 10px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. إعدادات المفاتيح ---
+# --- 3. إعدادات المفاتيح ---
 try:
     API_KEY = st.secrets["ODDS_API_KEY"]
 except:
@@ -35,7 +105,7 @@ except:
 
 MY_PHONE_NUMBER = "21600000000"
 
-# --- 3. إدارة الجلسات ---
+# --- 4. إدارة الجلسات ---
 @st.cache_resource
 def get_active_sessions(): return {}
 
@@ -63,7 +133,7 @@ def logout_user():
 
 if "my_ticket" not in st.session_state: st.session_state["my_ticket"] = []
 
-# --- 4. جلب الشعارات ---
+# --- 5. جلب الشعارات (القائمة الكاملة) ---
 def get_team_logo(team_name):
     name_clean = team_name.lower().strip()
     
@@ -76,7 +146,7 @@ def get_team_logo(team_name):
         "sfaxien": "https://upload.wikimedia.org/wikipedia/en/thumb/a/a2/CS_Sfaxien_Logo.svg/1200px-CS_Sfaxien_Logo.svg.png",
         "stade tunisien": "https://upload.wikimedia.org/wikipedia/fr/4/4e/Stade_tunisien.png",
         "monastir": "https://upload.wikimedia.org/wikipedia/fr/thumb/3/30/Union_sportive_monastirienne_%28logo%29.svg/1200px-Union_sportive_monastirienne_%28logo%29.svg.png",
-
+        
         # 🇪🇸 إسبانيا
         "real madrid": "https://upload.wikimedia.org/wikipedia/en/thumb/5/56/Real_Madrid_CF.svg/1200px-Real_Madrid_CF.svg.png",
         "barcelona": "https://upload.wikimedia.org/wikipedia/en/thumb/4/47/FC_Barcelona_%28crest%29.svg/1200px-FC_Barcelona_%28crest%29.svg.png",
@@ -87,7 +157,7 @@ def get_team_logo(team_name):
         "betis": "https://upload.wikimedia.org/wikipedia/en/thumb/1/13/Real_betis_logo.svg/1200px-Real_betis_logo.svg.png",
         "sociedad": "https://upload.wikimedia.org/wikipedia/en/thumb/f/f1/Real_Sociedad_logo.svg/1200px-Real_Sociedad_logo.svg.png",
         "bilbao": "https://upload.wikimedia.org/wikipedia/en/thumb/9/98/Club_Athletic_Bilbao_logo.svg/1200px-Club_Athletic_Bilbao_logo.svg.png",
-
+        
         # 🇬🇧 إنجلترا
         "man city": "https://upload.wikimedia.org/wikipedia/en/thumb/e/eb/Manchester_City_FC_badge.svg/1200px-Manchester_City_FC_badge.svg.png",
         "manchester city": "https://upload.wikimedia.org/wikipedia/en/thumb/e/eb/Manchester_City_FC_badge.svg/1200px-Manchester_City_FC_badge.svg.png",
@@ -128,7 +198,15 @@ def get_team_logo(team_name):
         "benfica": "https://upload.wikimedia.org/wikipedia/en/thumb/a/a2/SL_Benfica_logo.svg/1200px-SL_Benfica_logo.svg.png",
         "sporting": "https://upload.wikimedia.org/wikipedia/en/thumb/e/e1/Sporting_Clube_de_Portugal_%28Logo%29.svg/1200px-Sporting_Clube_de_Portugal_%28Logo%29.svg.png",
         "ajax": "https://upload.wikimedia.org/wikipedia/en/thumb/7/79/Ajax_Amsterdam.svg/1200px-Ajax_Amsterdam.svg.png",
-        "feyenoord": "https://upload.wikimedia.org/wikipedia/en/thumb/e/e3/Feyenoord_logo.svg/1200px-Feyenoord_logo.svg.png"
+        "feyenoord": "https://upload.wikimedia.org/wikipedia/en/thumb/e/e3/Feyenoord_logo.svg/1200px-Feyenoord_logo.svg.png",
+
+        # 🌍 منتخبات
+        "tunisia": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Flag_of_Tunisia.svg/1200px-Flag_of_Tunisia.svg.png",
+        "morocco": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Flag_of_Morocco.svg/1200px-Flag_of_Morocco.svg.png",
+        "egypt": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Flag_of_Egypt.svg/1200px-Flag_of_Egypt.svg.png",
+        "france": "https://upload.wikimedia.org/wikipedia/en/thumb/c/c3/Flag_of_France.svg/1200px-Flag_of_France.svg.png",
+        "brazil": "https://upload.wikimedia.org/wikipedia/en/thumb/0/05/Flag_of_Brazil.svg/1200px-Flag_of_Brazil.svg.png",
+        "argentina": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Flag_of_Argentina.svg/1200px-Flag_of_Argentina.svg.png"
     }
     
     for key in logos:
@@ -137,7 +215,7 @@ def get_team_logo(team_name):
             
     return "https://cdn-icons-png.flaticon.com/512/10542/10542547.png"
 
-# --- 5. محرك الذكاء الاصطناعي (السردي) ---
+# --- 6. محرك الذكاء الاصطناعي (السردي) ---
 def calculate_exact_goals(over_odd, under_odd):
     if over_odd == 0 or under_odd == 0: return {}, None
     prob_over = 1 / over_odd
@@ -194,19 +272,23 @@ def ai_analyst_report(match_row, expected_goals):
     final_report = f"""### {headline}\n\n**🧐 القراءة الفنية:**\n{story}\n\n---\n**📊 توقعات الشباك:**\n{goals_txt}\n\n🎯 **النتيجة:** `{score_pred}`\n🛡️ **الأمان:** `{risk}/10`"""
     return final_report, risk
 
-# --- 6. الحماية ---
+# --- 7. الحماية ---
 def check_password():
     if st.session_state.get("password_correct", False): return True
     col1, col2, col3 = st.columns([1, 2, 1]) 
     with col2: 
-        st.image("https://cdn-icons-png.flaticon.com/512/3593/3593510.png", width=80)
+        st.markdown("<div class='glass-box' style='text-align:center;'>", unsafe_allow_html=True)
+        st.image("https://cdn-icons-png.flaticon.com/512/3593/3593510.png", width=100)
         st.title("💎 Koralytics AI")
-        st.info("💡 Debug Edition: V16.2")
+        st.markdown("**بوابة التحليل الرياضي الذكي**")
+        st.markdown("</div>", unsafe_allow_html=True)
+        
         wa_link = f"https://wa.me/{MY_PHONE_NUMBER}?text=شراء مفتاح"
-        st.link_button("📲 شراء مفتاح", wa_link, use_container_width=True)
+        st.link_button("📲 شراء مفتاح (VIP)", wa_link, use_container_width=True)
+        
         with st.form("login_form"):
-            password_input = st.text_input("مفتاح الدخول:", type="password")
-            if st.form_submit_button("دخول", use_container_width=True):
+            password_input = st.text_input("🔑 مفتاح الدخول:", type="password")
+            if st.form_submit_button("🚀 دخول للنظام", use_container_width=True):
                 if "passwords" in st.secrets and password_input in st.secrets["passwords"].values():
                     is_allowed, msg = manage_session_lock(password_input)
                     if is_allowed:
@@ -214,10 +296,10 @@ def check_password():
                         st.session_state["current_key"] = password_input
                         st.success("✅"); time.sleep(0.5); st.rerun()
                     else: st.error(msg)
-                else: st.error("❌ خطأ")
+                else: st.error("❌ مفتاح خاطئ")
     return False
 
-# --- 7. جلب البيانات ---
+# --- 8. جلب البيانات ---
 @st.cache_data(ttl=3600)
 def fetch_odds(sport_key):
     try:
@@ -235,7 +317,6 @@ def process_data_with_logos(raw_data):
         if not match['bookmakers']: continue
         raw_date = match['commence_time'].replace('T', ' ')[:16]
         
-        # حفظ الأسماء لكشفها
         debug_names.append(f"{match['home_team']} 🆚 {match['away_team']}")
 
         mkts = match['bookmakers'][0]['markets']
@@ -265,69 +346,78 @@ def process_data_with_logos(raw_data):
             "O 2.5": over_25, "U 2.5": under_25
         })
     
-    # عرض الأسماء في القائمة الجانبية
     with st.sidebar:
-        st.warning("🕵️‍♂️ أسماء الفرق كما وصلت من الموقع:")
-        st.code("\n".join(debug_names))
+        with st.expander("🕵️‍♂️ Debug Names"):
+            st.code("\n".join(debug_names))
         
     return pd.DataFrame(matches)
 
-# --- 8. التطبيق الرئيسي ---
+# --- 9. التطبيق الرئيسي ---
 def main():
     if not check_password(): return
 
+    # --- Sidebar ---
     with st.sidebar:
-        st.header("💎 لوحة التحكم")
-        if st.button("🔴 خروج"): logout_user()
-        if st.session_state.get("current_key") == "admin2026": 
-            if st.button("تصفير الجلسات"): get_active_sessions().clear(); st.success("تم!")
-
-        st.subheader("🧾 ورقتي")
+        st.title("💎 Koralytics")
+        st.markdown("---")
+        
         if st.session_state["my_ticket"]:
             total_odd = 1.0
-            ticket_txt = "🚀 *Koralytics Ticket:*\n"
+            ticket_txt = "🚀 *Koralytics VIP Ticket:*\n"
             st.markdown('<div class="ticket-box">', unsafe_allow_html=True)
+            st.markdown("#### 🧾 ورقتي")
             for item in st.session_state["my_ticket"]:
                 st.markdown(f"<div class='ticket-item'>✅ {item['pick']} <b style='float:right'>{item['odd']}</b></div>", unsafe_allow_html=True)
                 total_odd *= item['odd']
                 ticket_txt += f"✅ {item['pick']} @ {item['odd']}\n"
             st.markdown('</div>', unsafe_allow_html=True)
-            st.metric("Total Odds", f"{total_odd:.2f}")
-            wa_url = f"https://wa.me/?text={urllib.parse.quote(ticket_txt)}"
-            st.link_button("📲 واتساب", wa_url, use_container_width=True)
-            if st.button("🗑️ مسح"): st.session_state["my_ticket"] = []; st.rerun()
             
-        st.divider()
+            col_t1, col_t2 = st.columns(2)
+            with col_t1: st.metric("Total Odds", f"{total_odd:.2f}")
+            with col_t2: 
+                wa_url = f"https://wa.me/?text={urllib.parse.quote(ticket_txt)}"
+                st.link_button("📲 واتساب", wa_url, use_container_width=True)
+            
+            if st.button("🗑️ مسح الورقة", use_container_width=True): 
+                st.session_state["my_ticket"] = []; st.rerun()
+            
+        st.markdown("---")
         try:
             r = requests.get(f'https://api.the-odds-api.com/v4/sports/?apiKey={API_KEY}')
             if r.status_code != 200:
                 st.error("API Error: Check Key"); return
             active = r.json()
             groups = sorted(list(set([s['group'] for s in active])))
-            grp = st.selectbox("الرياضة", groups)
+            grp = st.selectbox("🏅 الرياضة", groups)
             leagues = {s['title']: s['key'] for s in active if s['group'] == grp}
-            lname = st.selectbox("البطولة", list(leagues.keys()))
+            lname = st.selectbox("🏆 البطولة", list(leagues.keys()))
             lkey = leagues[lname]
         except: st.error("Connection Error"); return
 
-        st.divider()
-        st.markdown('<div class="magic-btn">', unsafe_allow_html=True)
-        if st.button("🪄 العصا السحرية (Auto-Pick)"): st.session_state["magic_trigger"] = True
-        st.markdown('</div>', unsafe_allow_html=True)
-        st.divider()
+        st.markdown("---")
+        st.markdown("### ⚙️ أدوات")
         budget = st.number_input("💵 ميزانيتك ($):", 100.0, 50000.0, 500.0, step=50.0)
-        show_gold = st.checkbox("🔥 عرض الفرص الذهبية فقط")
+        show_gold = st.checkbox("🔥 عرض الفرص الذهبية")
+        if st.button("🔴 تسجيل خروج", use_container_width=True): logout_user()
 
-    st.subheader(f"⚽ {lname}")
+    # --- Main Content ---
+    st.title(f"⚽ {lname}")
+    st.markdown(f"**تحليل مباشر ومتقدم للمباريات باستخدام الذكاء الاصطناعي**")
+    
+    # Magic Wand Button (Centered)
+    col_mw1, col_mw2, col_mw3 = st.columns([1,2,1])
+    with col_mw2:
+        if st.button("🪄 العصا السحرية (اختر لي أفضل 3 مباريات)", use_container_width=True):
+             st.session_state["magic_trigger"] = True
+
     data, error = fetch_odds(lkey)
     
     if data:
-        # هنا يتم استدعاء دالة الجاسوس
         df = process_data_with_logos(data)
         
         if show_gold and not df.empty:
             df = df[((1/df['1']) > 0.65) | ((1/df['2']) > 0.65)]
-            if df.empty: st.warning("لا توجد فرص ذهبية.")
+            if df.empty: st.warning("لا توجد فرص ذهبية حالياً.")
 
         if st.session_state.get("magic_trigger") and not df.empty:
             st.session_state["my_ticket"] = []
@@ -346,8 +436,8 @@ def main():
             st.dataframe(
                 df,
                 column_config={
-                    "H_Logo": st.column_config.ImageColumn("شعار", width="small"),
-                    "A_Logo": st.column_config.ImageColumn("شعار", width="small"),
+                    "H_Logo": st.column_config.ImageColumn("🏠", width="small"),
+                    "A_Logo": st.column_config.ImageColumn("✈️", width="small"),
                     "1": st.column_config.NumberColumn("1 (Home)", format="%.2f"),
                     "X": st.column_config.NumberColumn("X (Draw)", format="%.2f"),
                     "2": st.column_config.NumberColumn("2 (Away)", format="%.2f"),
@@ -356,20 +446,24 @@ def main():
                 hide_index=True
             )
 
-            st.divider()
+            st.markdown("---")
+            
+            # Analysis Section in Glass Box
+            st.markdown("<div class='glass-box'>", unsafe_allow_html=True)
             c1, c2 = st.columns([1, 1.5])
             with c1:
+                st.subheader("🔍 تفاصيل المباراة")
                 matches_txt = [f"{row['المضيف']} vs {row['الضيف']}" for i, row in df.iterrows()]
-                sel = st.selectbox("اختر المباراة للتحليل:", matches_txt)
+                sel = st.selectbox("اختر المباراة:", matches_txt)
                 host = sel.split(" vs ")[0]
                 row = df[df['المضيف'] == host].iloc[0]
                 
-                col_img1, col_vs, col_img2 = st.columns([1,1,1])
-                with col_img1: st.image(row['H_Logo'], width=80)
-                with col_img2: st.image(row['A_Logo'], width=80)
+                col_img1, col_vs, col_img2 = st.columns([1,0.5,1])
+                with col_img1: st.image(row['H_Logo'], width=100)
+                with col_img2: st.image(row['A_Logo'], width=100)
                 
-                st.markdown("### 💰 حاسبة الربح")
-                bet_type = st.radio("نوع الرهان", ["فوز (1X2)", "أهداف (O/U)"], horizontal=True)
+                st.markdown("#### 💰 حاسبة الربح")
+                bet_type = st.radio("النوع", ["فوز (1X2)", "أهداف (O/U)"], horizontal=True, label_visibility="collapsed")
                 if bet_type == "فوز (1X2)":
                     opts = {f"فوز {row['المضيف']}": row['1'], "تعادل": row['X'], f"فوز {row['الضيف']}": row['2']}
                 else:
@@ -383,7 +477,7 @@ def main():
                     st.toast("✅ تمت الإضافة")
                     time.sleep(0.5); st.rerun()
                 
-                stake = st.number_input("رهان فردي ($):", 1.0, 1000.0, 10.0)
+                stake = st.number_input("الرهان ($):", 1.0, 1000.0, 10.0)
                 st.markdown(f"<div class='profit-box'>الربح المتوقع: <b>{(stake * val_odd):.2f}$</b></div>", unsafe_allow_html=True)
 
             with c2:
@@ -396,17 +490,15 @@ def main():
 
                 rec_msg = "مغامرة!" if risk < 5 else "آمنة."
                 rec_amount = budget * (3 if risk > 7 else 1) / 100
-                st.markdown(f"""<div class="advisor-box">💡 <b>المستشار المالي:</b><br>هذه الفرصة {rec_msg} ({risk}/10).<br>المبلغ المقترح: {rec_amount:.1f}$</div>""", unsafe_allow_html=True)
+                st.markdown(f"""<div class="advisor-box">💡 <b>المستشار المالي:</b> الفرصة {rec_msg} ({risk}/10).<br>المبلغ المقترح: {rec_amount:.1f}$</div>""", unsafe_allow_html=True)
 
                 if row['1'] > 0:
                     h_prob = (1 / row['1']) * 100
                     d_prob = (1 / row['X']) * 100
                     a_prob = (1 / row['2']) * 100
                     chart_df = pd.DataFrame({'Team': [row['المضيف'], 'Draw', row['الضيف']], 'Prob': [h_prob, d_prob, a_prob]}).set_index('Team')
-                    st.bar_chart(chart_df, color="#0083B8", height=200)
+                    st.bar_chart(chart_df, color=["#00d2ff"]) # Blue Bars
 
-                if probs:
-                    goals_df = pd.DataFrame(list(probs.items()), columns=['G', 'P']).set_index('G')
-                    st.bar_chart(goals_df, color="#FF4B4B", height=200)
+            st.markdown("</div>", unsafe_allow_html=True)
 
 if __name__ == '__main__': main()
