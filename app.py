@@ -8,8 +8,8 @@ from scipy.stats import poisson
 
 # --- 1. إعدادات الصفحة ---
 st.set_page_config(
-    page_title="Koralytics AI | Gold Edition",
-    page_icon="🏆",
+    page_title="Koralytics AI | V16",
+    page_icon="🇹🇳",
     layout="wide"
 )
 
@@ -39,10 +39,8 @@ st.markdown("""
 # --- 2. إعدادات المفاتيح ---
 try:
     API_KEY = st.secrets["ODDS_API_KEY"]
-    RAPID_KEY = st.secrets["RAPID_API_KEY"]
 except:
     API_KEY = "YOUR_ODDS_KEY"
-    RAPID_KEY = "YOUR_RAPID_KEY"
 
 MY_PHONE_NUMBER = "21600000000"
 
@@ -74,19 +72,81 @@ def logout_user():
 
 if "my_ticket" not in st.session_state: st.session_state["my_ticket"] = []
 
-# --- 4. جلب الشعارات ---
-@st.cache_data(ttl=604800, show_spinner=False)
+# --- 4. جلب الشعارات (القائمة الشاملة) ---
 def get_team_logo(team_name):
-    if RAPID_KEY == "YOUR_RAPID_KEY": return None
-    url = "https://api-football-v1.p.rapidapi.com/v3/teams"
-    querystring = {"search": team_name}
-    headers = {"X-RapidAPI-Key": RAPID_KEY, "X-RapidAPI-Host": "api-football-v1.p.rapidapi.com"}
-    try:
-        response = requests.get(url, headers=headers, params=querystring)
-        data = response.json()
-        if data['results'] > 0: return data['response'][0]['team']['logo']
-        return "https://cdn-icons-png.flaticon.com/512/10542/10542547.png"
-    except: return "https://cdn-icons-png.flaticon.com/512/10542/10542547.png"
+    name_clean = team_name.lower()
+    
+    logos = {
+        # 🇹🇳 أندية تونس (Tunisia)
+        "esperance": "https://upload.wikimedia.org/wikipedia/en/thumb/7/7b/Esp%C3%A9rance_Sportive_de_Tunis.svg/1200px-Esp%C3%A9rance_Sportive_de_Tunis.svg.png",
+        "club africain": "https://upload.wikimedia.org/wikipedia/en/thumb/e/e0/Club_Africain_logo.svg/1200px-Club_Africain_logo.svg.png",
+        "etoile du sahel": "https://upload.wikimedia.org/wikipedia/en/thumb/2/2f/Etoile_du_Sahel.svg/1200px-Etoile_du_Sahel.svg.png",
+        "cs sfaxien": "https://upload.wikimedia.org/wikipedia/en/thumb/a/a2/CS_Sfaxien_Logo.svg/1200px-CS_Sfaxien_Logo.svg.png",
+        "stade tunisien": "https://upload.wikimedia.org/wikipedia/fr/4/4e/Stade_tunisien.png",
+        "monastir": "https://upload.wikimedia.org/wikipedia/fr/thumb/3/30/Union_sportive_monastirienne_%28logo%29.svg/1200px-Union_sportive_monastirienne_%28logo%29.svg.png",
+        "ben guerdane": "https://upload.wikimedia.org/wikipedia/en/thumb/7/7e/US_Ben_Guerdane.png/200px-US_Ben_Guerdane.png",
+        "bizertin": "https://upload.wikimedia.org/wikipedia/en/thumb/e/e8/CA_Bizertin.png/200px-CA_Bizertin.png",
+
+        # 🇪🇸 إسبانيا
+        "real madrid": "https://upload.wikimedia.org/wikipedia/en/thumb/5/56/Real_Madrid_CF.svg/1200px-Real_Madrid_CF.svg.png",
+        "barcelona": "https://upload.wikimedia.org/wikipedia/en/thumb/4/47/FC_Barcelona_%28crest%29.svg/1200px-FC_Barcelona_%28crest%29.svg.png",
+        "atletico": "https://upload.wikimedia.org/wikipedia/en/thumb/f/f4/Atletico_Madrid_2017_logo.svg/1200px-Atletico_Madrid_2017_logo.svg.png",
+        "girona": "https://upload.wikimedia.org/wikipedia/en/thumb/9/90/For_Girona_FC.svg/1200px-For_Girona_FC.svg.png",
+        "sevilla": "https://upload.wikimedia.org/wikipedia/en/thumb/3/3b/Sevilla_FC_logo.svg/1200px-Sevilla_FC_logo.svg.png",
+        "valencia": "https://upload.wikimedia.org/wikipedia/en/thumb/c/ce/Valenciacf.svg/1200px-Valenciacf.svg.png",
+        "betis": "https://upload.wikimedia.org/wikipedia/en/thumb/1/13/Real_betis_logo.svg/1200px-Real_betis_logo.svg.png",
+        "sociedad": "https://upload.wikimedia.org/wikipedia/en/thumb/f/f1/Real_Sociedad_logo.svg/1200px-Real_Sociedad_logo.svg.png",
+        "bilbao": "https://upload.wikimedia.org/wikipedia/en/thumb/9/98/Club_Athletic_Bilbao_logo.svg/1200px-Club_Athletic_Bilbao_logo.svg.png",
+        "athletic club": "https://upload.wikimedia.org/wikipedia/en/thumb/9/98/Club_Athletic_Bilbao_logo.svg/1200px-Club_Athletic_Bilbao_logo.svg.png",
+        "villarreal": "https://upload.wikimedia.org/wikipedia/en/thumb/7/70/Villarreal_CF_logo.svg/1200px-Villarreal_CF_logo.svg.png",
+
+        # 🇬🇧 إنجلترا
+        "manchester city": "https://upload.wikimedia.org/wikipedia/en/thumb/e/eb/Manchester_City_FC_badge.svg/1200px-Manchester_City_FC_badge.svg.png",
+        "manchester united": "https://upload.wikimedia.org/wikipedia/en/thumb/7/7a/Manchester_United_FC_crest.svg/1200px-Manchester_United_FC_crest.svg.png",
+        "man utd": "https://upload.wikimedia.org/wikipedia/en/thumb/7/7a/Manchester_United_FC_crest.svg/1200px-Manchester_United_FC_crest.svg.png",
+        "liverpool": "https://upload.wikimedia.org/wikipedia/en/thumb/0/0c/Liverpool_FC.svg/1200px-Liverpool_FC.svg.png",
+        "arsenal": "https://upload.wikimedia.org/wikipedia/en/thumb/5/53/Arsenal_FC.svg/1200px-Arsenal_FC.svg.png",
+        "chelsea": "https://upload.wikimedia.org/wikipedia/en/thumb/c/cc/Chelsea_FC.svg/1200px-Chelsea_FC.svg.png",
+        "tottenham": "https://upload.wikimedia.org/wikipedia/en/thumb/b/b4/Tottenham_Hotspur.svg/1200px-Tottenham_Hotspur.svg.png",
+        "newcastle": "https://upload.wikimedia.org/wikipedia/en/thumb/5/56/Newcastle_United_Logo.svg/1200px-Newcastle_United_Logo.svg.png",
+        "aston villa": "https://upload.wikimedia.org/wikipedia/en/thumb/f/f9/Aston_Villa_FC_crest_%282016%29.svg/1200px-Aston_Villa_FC_crest_%282016%29.svg.png",
+        "west ham": "https://upload.wikimedia.org/wikipedia/en/thumb/c/c2/West_Ham_United_FC_logo.svg/1200px-West_Ham_United_FC_logo.svg.png",
+        "brighton": "https://upload.wikimedia.org/wikipedia/en/thumb/f/fd/Brighton_%26_Hove_Albion_logo.svg/1200px-Brighton_%26_Hove_Albion_logo.svg.png",
+
+        # 🇮🇹 إيطاليا
+        "inter": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/FC_Internazionale_Milano_2021.svg/1200px-FC_Internazionale_Milano_2021.svg.png",
+        "milan": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/Logo_of_AC_Milan.svg/1200px-Logo_of_AC_Milan.svg.png",
+        "juventus": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Juventus_FC_2017_icon_%28black%29.svg/1200px-Juventus_FC_2017_icon_%28black%29.svg.png",
+        "napoli": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/SSC_Neapel.svg/1200px-SSC_Neapel.svg.png",
+        "roma": "https://upload.wikimedia.org/wikipedia/en/thumb/f/f7/AS_Roma_logo_%282017%29.svg/1200px-AS_Roma_logo_%282017%29.svg.png",
+        "lazio": "https://upload.wikimedia.org/wikipedia/en/thumb/c/ce/S.S._Lazio_badge.svg/1200px-S.S._Lazio_badge.svg.png",
+        "atalanta": "https://upload.wikimedia.org/wikipedia/en/thumb/6/66/AtalantaBC.svg/1200px-AtalantaBC.svg.png",
+
+        # 🇫🇷 فرنسا
+        "psg": "https://upload.wikimedia.org/wikipedia/en/thumb/a/a7/Paris_Saint-Germain_F.C..svg/1200px-Paris_Saint-Germain_F.C..svg.png",
+        "paris": "https://upload.wikimedia.org/wikipedia/en/thumb/a/a7/Paris_Saint-Germain_F.C..svg/1200px-Paris_Saint-Germain_F.C..svg.png",
+        "marseille": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/Olympique_Marseille_logo.svg/1200px-Olympique_Marseille_logo.svg.png",
+        "lyon": "https://upload.wikimedia.org/wikipedia/en/thumb/c/c6/Olympique_Lyonnais.svg/1200px-Olympique_Lyonnais.svg.png",
+        "monaco": "https://upload.wikimedia.org/wikipedia/en/thumb/b/ba/AS_Monaco_FC.svg/1200px-AS_Monaco_FC.svg.png",
+        "lille": "https://upload.wikimedia.org/wikipedia/en/thumb/3/3f/LOSC_Lille_Logo.svg/1200px-LOSC_Lille_Logo.svg.png",
+
+        # 🇩🇪 ألمانيا
+        "bayern": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/FC_Bayern_M%C3%BCnchen_logo_%282017%29.svg/1200px-FC_Bayern_M%C3%BCnchen_logo_%282017%29.svg.png",
+        "dortmund": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Borussia_Dortmund_logo.svg/1200px-Borussia_Dortmund_logo.svg.png",
+        "leverkusen": "https://upload.wikimedia.org/wikipedia/en/thumb/5/59/Bayer_04_Leverkusen_logo.svg/1200px-Bayer_04_Leverkusen_logo.svg.png",
+        "leipzig": "https://upload.wikimedia.org/wikipedia/en/thumb/0/04/RB_Leipzig_2014_logo.svg/1200px-RB_Leipzig_2014_logo.svg.png",
+
+        # 🇵🇹 البرتغال
+        "porto": "https://upload.wikimedia.org/wikipedia/en/thumb/f/f1/FC_Porto.svg/1200px-FC_Porto.svg.png",
+        "benfica": "https://upload.wikimedia.org/wikipedia/en/thumb/a/a2/SL_Benfica_logo.svg/1200px-SL_Benfica_logo.svg.png",
+        "sporting": "https://upload.wikimedia.org/wikipedia/en/thumb/e/e1/Sporting_Clube_de_Portugal_%28Logo%29.svg/1200px-Sporting_Clube_de_Portugal_%28Logo%29.svg.png"
+    }
+    
+    for key in logos:
+        if key in name_clean:
+            return logos[key]
+            
+    return "https://cdn-icons-png.flaticon.com/512/10542/10542547.png"
 
 # --- 5. محرك الذكاء الاصطناعي (السردي) ---
 def calculate_exact_goals(over_odd, under_odd):
@@ -157,7 +217,7 @@ def check_password():
     with col2: 
         st.image("https://cdn-icons-png.flaticon.com/512/3593/3593510.png", width=80)
         st.title("💎 Koralytics AI")
-        st.info("💡 Gold Edition: V15")
+        st.info("💡 Version 16: Global & Local Edition")
         wa_link = f"https://wa.me/{MY_PHONE_NUMBER}?text=شراء مفتاح"
         st.link_button("📲 شراء مفتاح", wa_link, use_container_width=True)
         with st.form("login_form"):
@@ -244,13 +304,15 @@ def main():
         st.divider()
         try:
             r = requests.get(f'https://api.the-odds-api.com/v4/sports/?apiKey={API_KEY}')
+            if r.status_code != 200:
+                st.error("API Error: Check Key"); return
             active = r.json()
             groups = sorted(list(set([s['group'] for s in active])))
             grp = st.selectbox("الرياضة", groups)
             leagues = {s['title']: s['key'] for s in active if s['group'] == grp}
             lname = st.selectbox("البطولة", list(leagues.keys()))
             lkey = leagues[lname]
-        except: st.error("API Error"); return
+        except: st.error("Connection Error"); return
 
         st.divider()
         st.markdown('<div class="magic-btn">', unsafe_allow_html=True)
@@ -339,7 +401,7 @@ def main():
                 rec_amount = budget * (3 if risk > 7 else 1) / 100
                 st.markdown(f"""<div class="advisor-box">💡 <b>المستشار المالي:</b><br>هذه الفرصة {rec_msg} ({risk}/10).<br>المبلغ المقترح: {rec_amount:.1f}$</div>""", unsafe_allow_html=True)
 
-                # --- (تمت إعادة الرسوم البيانية هنا) ---
+                # الرسوم البيانية (Charts)
                 if row['1'] > 0:
                     h_prob = (1 / row['1']) * 100
                     d_prob = (1 / row['X']) * 100
