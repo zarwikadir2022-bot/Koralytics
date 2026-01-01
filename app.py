@@ -2,13 +2,14 @@ import streamlit as st
 import pandas as pd
 import requests
 import time
+import urllib.parse # مكتبة لتشفير النص للواتساب
 import numpy as np
 from scipy.stats import poisson
 
 # --- 1. إعدادات الصفحة ---
 st.set_page_config(
-    page_title="Koralytics AI | Magic Wand",
-    page_icon="🪄",
+    page_title="Koralytics AI | Final",
+    page_icon="🏆",
     layout="wide"
 )
 
@@ -24,7 +25,6 @@ st.markdown("""
     a[href*="wa.me"] button {background-color: #25D366 !important; border-color: #25D366 !important; color: white !important;}
     .stButton>button {border-radius: 8px;}
     
-    /* تنسيق الزر السحري */
     .magic-btn button {
         background: linear-gradient(45deg, #833ab4, #fd1d1d, #fcb045);
         color: white !important;
@@ -156,7 +156,7 @@ def check_password():
     with col2: 
         st.image("https://cdn-icons-png.flaticon.com/512/3593/3593510.png", width=80)
         st.title("💎 Koralytics AI")
-        st.info("💡 الإصدار الحادي عشر: Magic Wand")
+        st.info("💡 الإصدار النهائي: V12")
         wa_link = f"https://wa.me/{MY_PHONE_NUMBER}?text=شراء مفتاح"
         st.link_button("📲 شراء مفتاح", wa_link, use_container_width=True)
         
@@ -227,11 +227,10 @@ def process_data(raw_data):
 def show_app_content():
     manage_session_lock(st.session_state["current_key"])
 
-    # ------------------ SIDEBAR (TICKET & CONTROLS) ------------------
     with st.sidebar:
         st.header("💎 لوحة التحكم")
         
-        # --- 1. القائمة العلوية (اختيار البطولة) ---
+        # --- القائمة العلوية ---
         if st.button("🔴 تسجيل الخروج"): logout_user()
         if st.session_state.get("current_key") == "admin2026": 
             if st.button("تصفير الجلسات"): get_active_sessions().clear(); st.success("تم!")
@@ -245,7 +244,6 @@ def show_app_content():
         lname = st.selectbox("البطولة:", list(leagues.keys()))
         lkey = leagues[lname]
         
-        # --- جلب البيانات أولاً لكي تعمل العصا السحرية ---
         data, error = fetch_odds(lkey)
         df_matches = pd.DataFrame()
         if not error and data:
@@ -253,56 +251,39 @@ def show_app_content():
 
         st.divider()
 
-        # --- 2. المولد السحري (Magic Wand) ---
+        # --- المولد السحري (Magic Wand) ---
         st.markdown('<div class="magic-btn">', unsafe_allow_html=True)
         if st.button("🤖 اصنع لي ورقة رابحة (أفضل 3)", use_container_width=True):
             if not df_matches.empty:
-                st.session_state["my_ticket"] = [] # تنظيف الورقة
+                st.session_state["my_ticket"] = [] 
                 candidates = []
-                
-                # البحث عن أكثر الفرص أماناً
                 for i, row in df_matches.iterrows():
-                    # فوز المضيف
-                    if row['فوز المضيف (1)'] > 1.05: # تفادي الأخطاء
+                    if row['فوز المضيف (1)'] > 1.05:
                         prob_h = 1 / row['فوز المضيف (1)']
-                        if prob_h > 0.60: # شرط الأمان 60%
-                            candidates.append({
-                                "match": f"{row['المضيف']} vs {row['الضيف']}",
-                                "pick": f"فوز {row['المضيف']}",
-                                "odd": row['فوز المضيف (1)'],
-                                "prob": prob_h
-                            })
-                    # فوز الضيف
+                        if prob_h > 0.60:
+                            candidates.append({"match": f"{row['المضيف']} vs {row['الضيف']}", "pick": f"فوز {row['المضيف']}", "odd": row['فوز المضيف (1)'], "prob": prob_h})
                     if row['فوز الضيف (2)'] > 1.05:
                         prob_a = 1 / row['فوز الضيف (2)']
                         if prob_a > 0.60:
-                            candidates.append({
-                                "match": f"{row['المضيف']} vs {row['الضيف']}",
-                                "pick": f"فوز {row['الضيف']}",
-                                "odd": row['فوز الضيف (2)'],
-                                "prob": prob_a
-                            })
+                            candidates.append({"match": f"{row['المضيف']} vs {row['الضيف']}", "pick": f"فوز {row['الضيف']}", "odd": row['فوز الضيف (2)'], "prob": prob_a})
                 
-                # ترتيب حسب الأقوى (Highest Probability) وأخذ أفضل 3
                 if candidates:
                     candidates.sort(key=lambda x: x['prob'], reverse=True)
-                    top_3 = candidates[:3]
-                    st.session_state["my_ticket"].extend(top_3)
-                    st.success("✨ تم توليد الورقة السحرية!")
-                    time.sleep(0.5)
-                    st.rerun()
+                    st.session_state["my_ticket"].extend(candidates[:3])
+                    st.success("✨ تم التوليد!")
+                    time.sleep(0.5); st.rerun()
                 else:
-                    st.warning("⚠️ لا توجد مباريات مضمونة جداً (Prob > 60%) في هذه البطولة حالياً.")
-            else:
-                st.warning("لا توجد بيانات.")
+                    st.warning("⚠️ لا توجد مباريات مضمونة جداً حالياً.")
+            else: st.warning("لا توجد بيانات.")
         st.markdown('</div>', unsafe_allow_html=True)
 
         st.divider()
 
-        # --- 3. عرض الورقة (Ticket View) ---
+        # --- 🧾 عرض الورقة & المشاركة ---
         st.subheader("🧾 ورقتي (My Ticket)")
         if st.session_state["my_ticket"]:
             total_odd = 1.0
+            ticket_text = "🚀 *Koralytics Ticket:*\n" # نص الرسالة
             
             st.markdown('<div class="ticket-box">', unsafe_allow_html=True)
             for idx, item in enumerate(st.session_state["my_ticket"]):
@@ -313,11 +294,19 @@ def show_app_content():
                 </div>
                 """, unsafe_allow_html=True)
                 total_odd *= item['odd']
+                ticket_text += f"{idx+1}. {item['match']}\n   🎯 {item['pick']} @ {item['odd']}\n"
             st.markdown('</div>', unsafe_allow_html=True)
             
-            st.metric("الضارب الكلي (Total Odd)", f"{total_odd:.2f}")
+            ticket_text += f"\n💰 *Total Odds:* {total_odd:.2f}"
+            
+            st.metric("الضارب الكلي", f"{total_odd:.2f}")
             ticket_stake = st.number_input("مبلغ الورقة ($):", 1.0, 1000.0, 10.0)
             st.success(f"💸 الربح المحتمل: {ticket_stake * total_odd:.2f}$")
+            
+            # زر واتساب (جديد)
+            encoded_text = urllib.parse.quote(ticket_text)
+            wa_url = f"https://wa.me/?text={encoded_text}"
+            st.link_button("📲 شارك الورقة (WhatsApp)", wa_url, use_container_width=True)
             
             if st.button("🗑️ مسح الورقة", use_container_width=True):
                 st.session_state["my_ticket"] = []
@@ -335,9 +324,7 @@ def show_app_content():
     if error: st.error(error)
     elif not data: st.warning("لا توجد مباريات.")
     else:
-        # البيانات موجودة بالفعل في df_matches
         df = df_matches
-        
         if show_gold and not df.empty:
             df = df[((1/df['فوز المضيف (1)']) > 0.65) | ((1/df['فوز الضيف (2)']) > 0.65)]
         
@@ -363,7 +350,7 @@ def show_app_content():
                 goals_probs, expected_goals = calculate_exact_goals(match_row['Over 2.5'], match_row['Under 2.5'])
                 ai_text, risk_score = ai_analyst_report(match_row, expected_goals)
 
-                # --- 💰 قسم الاختيار ---
+                # قسم الاختيار
                 st.markdown("### 🎯 اختر نتيجتك:")
                 bet_cat = st.radio("السوق:", ["الفائز (1X2)", "Over/Under"], horizontal=True)
                 selected_odd = 0.0
@@ -392,9 +379,8 @@ def show_app_content():
                             "pick": selection_name,
                             "odd": selected_odd
                         })
-                        st.toast(f"✅ تمت إضافة {selection_name} للورقة!", icon="🧾")
-                        time.sleep(0.5)
-                        st.rerun() 
+                        st.toast(f"✅ تمت الإضافة!", icon="🧾")
+                        time.sleep(0.5); st.rerun() 
                     
                     st.caption("أو احسبها كمباراة فردية:")
                     stake = st.number_input("رهان فردي ($):", 1.0, 1000.0, 10.0)
