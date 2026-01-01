@@ -7,7 +7,7 @@ from scipy.stats import poisson
 
 # --- 1. إعدادات الصفحة ---
 st.set_page_config(
-    page_title="Koralytics AI | Pro Analyst",
+    page_title="Koralytics AI | Ultimate",
     page_icon="🧠",
     layout="wide"
 )
@@ -67,17 +67,21 @@ def logout_user():
     st.session_state["current_key"] = None
     st.rerun()
 
-# --- 4. محرك الذكاء الاصطناعي المطور (Advanced AI Engine) ---
+# --- 4. محرك الذكاء الاصطناعي (تم التعديل ليعمل دائماً) ---
 
 def calculate_exact_goals(over_odd, under_odd):
+    # إذا كانت البيانات ناقصة (0)، نرجع None
+    if over_odd == 0 or under_odd == 0:
+        return {}, None
+
     prob_over = 1 / over_odd
     prob_under = 1 / under_odd
     margin = prob_over + prob_under
     fair_prob_under = prob_under / margin
     
-    if fair_prob_under > 0.55: expected_goals = 1.9  # دفاعية جداً
-    elif fair_prob_under > 0.45: expected_goals = 2.4 # متوسطة
-    elif fair_prob_under < 0.30: expected_goals = 3.3 # هجومية جداً
+    if fair_prob_under > 0.55: expected_goals = 1.9
+    elif fair_prob_under > 0.45: expected_goals = 2.4
+    elif fair_prob_under < 0.30: expected_goals = 3.3
     else: expected_goals = 2.8
         
     goals_probs = {}
@@ -86,74 +90,71 @@ def calculate_exact_goals(over_odd, under_odd):
     return goals_probs, expected_goals
 
 def ai_analyst_report(match_row, expected_goals):
-    """
-    النسخة المطورة: تحليل عميق وتوقعات دقيقة
-    """
     home = match_row['المضيف']
     away = match_row['الضيف']
     h_odd = match_row['فوز المضيف (1)']
     d_odd = match_row['تعادل (X)']
     a_odd = match_row['فوز الضيف (2)']
     
-    # 1. حساب الاحتمالات الضمنية
-    h_prob = (1/h_odd) * 100
-    a_prob = (1/a_odd) * 100
-    d_prob = (1/d_odd) * 100
+    # تفادي القسمة على صفر
+    h_prob = (1/h_odd * 100) if h_odd > 0 else 0
+    a_prob = (1/a_odd * 100) if a_odd > 0 else 0
     
-    # 2. تحديد السيناريو (Logic)
     report = f"#### 🤖 تقرير التحليل الاستراتيجي\n\n"
     
-    # -- القسم 1: ميزان القوى --
+    # 1. ميزان القوى (يعمل دائماً)
     report += "**1️⃣ ميزان القوى:**\n"
-    if h_prob > 60:
-        report += f"• **هيمنة مطلقة:** البيانات تشير لسيطرة كاملة لفريق **{home}**. احتمال المفاجأة ضعيف جداً.\n"
-        risk = 9 # آمن جداً
+    if h_prob == 0 or a_prob == 0:
+        report += "• ⚠️ بيانات الفائز غير كاملة، التحليل قد يكون غير دقيق.\n"
+        risk = 5
+    elif h_prob > 60:
+        report += f"• **هيمنة مطلقة:** البيانات ترشح **{home}** بقوة.\n"
+        risk = 9
     elif a_prob > 60:
-        report += f"• **هيمنة مطلقة:** البيانات تشير لسيطرة كاملة لفريق **{away}** خارج الديار.\n"
+        report += f"• **هيمنة مطلقة:** البيانات ترشح **{away}** بقوة.\n"
         risk = 9
     elif abs(h_prob - a_prob) < 10:
-        report += f"• **معركة تكتيكية:** الفريقان متقاربان جداً في المستوى. التعادل هو الخطر الأكبر هنا.\n"
-        risk = 4 # خطر
+        report += f"• **مباراة متكافئة:** الفريقان متقاربان جداً.\n"
+        risk = 4
     else:
         fav = home if h_prob > a_prob else away
-        report += f"• **أفضلية واضحة:** الكفة تميل لصالح **{fav}** ولكن الخصم ليس سهلاً.\n"
+        report += f"• **أفضلية واضحة:** الكفة تميل لـ **{fav}**.\n"
         risk = 7
 
-    # -- القسم 2: سيناريو الأهداف --
+    # 2. سيناريو الأهداف (يعمل فقط إذا توفرت البيانات)
     report += "\n**2️⃣ سيناريو الأهداف:**\n"
-    report += f"• **المعدل المتوقع:** حوالي {expected_goals:.1f} هدف.\n"
+    score_pred = "غير متوفر"
     
-    score_pred = ""
-    if expected_goals >= 2.8:
-        report += "• **النمط:** مباراة مفتوحة (Open Game). الدفاعات ستعاني. خيار (BTTS - كلا الفريقين يسجل) وارد بقوة.\n"
-        # توزيع الأهداف للتوقع
-        if h_prob > a_prob: score_pred = "2-1 أو 3-1"
-        else: score_pred = "1-2 أو 1-3"
-    elif expected_goals <= 2.1:
-        report += "• **النمط:** مباراة شحيحة الفرص (Park the Bus). هدف واحد قد يحسم اللقاء.\n"
-        if h_prob > a_prob: score_pred = "1-0 أو 2-0"
-        elif a_prob > h_prob: score_pred = "0-1 أو 0-2"
-        else: score_pred = "0-0 أو 1-1"
+    if expected_goals:
+        report += f"• **المعدل المتوقع:** {expected_goals:.1f} هدف.\n"
+        if expected_goals >= 2.8:
+            report += "• **النمط:** مباراة مفتوحة (Over).\n"
+            score_pred = "2-1 أو 3-1" if h_prob > a_prob else "1-2 أو 1-3"
+        elif expected_goals <= 2.1:
+            report += "• **النمط:** مباراة مغلقة (Under).\n"
+            score_pred = "1-0 أو 2-0" if h_prob > a_prob else "0-1 أو 0-2"
+        else:
+            report += "• **النمط:** متوازن.\n"
+            score_pred = "2-0 أو 2-1" if h_prob > a_prob else "0-2 أو 1-2"
     else:
-        report += "• **النمط:** مباراة متوازنة. غالباً ستشهد بين 2 إلى 3 أهداف.\n"
-        if h_prob > a_prob: score_pred = "2-0 أو 2-1"
-        else: score_pred = "0-2 أو 1-2"
+        report += "• ⚠️ **تحذير:** بيانات الأهداف (Over/Under) غير متوفرة من المصدر لهذه المباراة، لذا لا يمكن توقع عدد الأهداف بدقة.\n"
 
-    # -- القسم 3: التوصية النهائية --
-    report += "\n**3️⃣ توصية الخوارزمية:**\n"
+    # 3. التوصية
+    report += "\n**3️⃣ الخلاصة:**\n"
     if risk >= 8:
-        report += f"✅ **خيار آمن (Banker):** فوز {home if h_prob > a_prob else away}.\n"
+        report += f"✅ **خيار قوي:** فوز {home if h_prob > a_prob else away}.\n"
     elif risk <= 4:
-        report += f"⚠️ **مخاطرة:** يُفضل تجنب تحديد الفائز واللعب على (Under 3.5 Goals) أو (Double Chance).\n"
+        report += f"⚠️ **مخاطرة:** يُفضل تجنب الفائز واللعب على الأهداف (إن توفرت) أو التعادل.\n"
     else:
-        report += f"⚖️ **خيار متوازن:** فوز {home if h_prob > a_prob else away}.\n"
+        report += f"⚖️ **خيار جيد:** فوز {home if h_prob > a_prob else away}.\n"
         
-    report += f"🎯 **النتيجة الرقمية المتوقعة:** ({score_pred})\n"
+    if expected_goals:
+        report += f"🎯 **النتيجة المتوقعة:** ({score_pred})\n"
+        
     report += f"🛡️ **درجة الأمان:** {risk}/10"
-        
     return report
 
-# --- 5. نظام الدخول والحماية ---
+# --- 5. الحماية ---
 def check_password():
     if st.session_state.get("password_correct", False):
         key = st.session_state.get("current_key")
@@ -165,9 +166,9 @@ def check_password():
     with col2: 
         st.image("https://cdn-icons-png.flaticon.com/512/3593/3593510.png", width=80)
         st.title("💎 Koralytics AI")
-        st.info("💡 التحليل الرياضي العميق (Pro Version).")
+        st.info("💡 Pro Version")
         wa_link = f"https://wa.me/{MY_PHONE_NUMBER}?text=شراء مفتاح"
-        st.link_button("📲 شراء مفتاح (WhatsApp)", wa_link, use_container_width=True)
+        st.link_button("📲 شراء مفتاح", wa_link, use_container_width=True)
         
         with st.form("login_form"):
             password_input = st.text_input("مفتاح الدخول:", type="password")
@@ -184,7 +185,7 @@ def check_password():
                     else: st.error("❌ خطأ")
     return False
 
-# --- 6. API & Data ---
+# --- 6. API ---
 @st.cache_data(ttl=86400)
 def get_active_sports():
     if API_KEY == "YOUR_API_KEY": return []
@@ -213,12 +214,14 @@ def process_data(raw_data):
             h_odd = next((x['price'] for x in outcomes if x['name'] == match['home_team']), 0)
             a_odd = next((x['price'] for x in outcomes if x['name'] == match['away_team']), 0)
             d_odd = next((x['price'] for x in outcomes if x['name'] == 'Draw'), 0)
+        
         totals = next((m for m in mkts if m['key'] == 'totals'), None)
         over_25 = under_25 = 0.0
         if totals:
             outcomes = totals['outcomes']
             over_25 = next((x['price'] for x in outcomes if x['name'] == 'Over' and x['point'] == 2.5), 0)
             under_25 = next((x['price'] for x in outcomes if x['name'] == 'Under' and x['point'] == 2.5), 0)
+        
         matches.append({
             "المضيف": match['home_team'], "الضيف": match['away_team'],
             "فوز المضيف (1)": h_odd, "تعادل (X)": d_odd, "فوز الضيف (2)": a_odd,
@@ -255,11 +258,9 @@ def show_app_content():
             st.dataframe(df.style.background_gradient(subset=['فوز المضيف (1)', 'تعادل (X)', 'فوز الضيف (2)'], cmap='Greens').format("{:.2f}", subset=['فوز المضيف (1)', 'تعادل (X)', 'فوز الضيف (2)', 'Over 2.5', 'Under 2.5']), use_container_width=True)
             st.divider()
             
-            # --- منطقة التحليل والربح ---
             st.subheader("🧠 غرفة المحلل الذكي & حاسبة الربح")
             c1, c2 = st.columns([1, 1.3])
             
-            # العمود 1: المدخلات والربح
             with c1:
                 matches_txt = [f"{row['المضيف']} vs {row['الضيف']}" for i, row in df.iterrows()]
                 sel_match = st.selectbox("1️⃣ اختر المباراة:", matches_txt)
@@ -269,49 +270,43 @@ def show_app_content():
                 st.markdown("### 💰 حاسبة الربح")
                 bet_cat = st.radio("الرهان:", ["الفائز (1X2)", "Over/Under"], horizontal=True)
                 selected_odd = 0.0
-                selection_name = ""
                 
+                # التعامل مع القيم الصفرية (Missing Data) في القائمة المنسدلة
                 if bet_cat == "الفائز (1X2)":
-                    opts = {f"فوز {match_row['المضيف']} ({match_row['فوز المضيف (1)']})": match_row['فوز المضيف (1)'], f"تعادل ({match_row['تعادل (X)']})": match_row['تعادل (X)'], f"فوز {match_row['الضيف']} ({match_row['فوز الضيف (2)']})": match_row['فوز الضيف (2)']}
-                    choice = st.selectbox("النتيجة:", list(opts.keys()))
-                    selected_odd = opts[choice]
-                    selection_name = choice
+                    opts = {}
+                    if match_row['فوز المضيف (1)'] > 0: opts[f"فوز {match_row['المضيف']} ({match_row['فوز المضيف (1)']})"] = match_row['فوز المضيف (1)']
+                    if match_row['تعادل (X)'] > 0: opts[f"تعادل ({match_row['تعادل (X)']})"] = match_row['تعادل (X)']
+                    if match_row['فوز الضيف (2)'] > 0: opts[f"فوز {match_row['الضيف']} ({match_row['فوز الضيف (2)']})"] = match_row['فوز الضيف (2)']
                 else:
-                    opts = {f"Over 2.5 ({match_row['Over 2.5']})": match_row['Over 2.5'], f"Under 2.5 ({match_row['Under 2.5']})": match_row['Under 2.5']}
+                    opts = {}
+                    if match_row['Over 2.5'] > 0: opts[f"Over 2.5 ({match_row['Over 2.5']})"] = match_row['Over 2.5']
+                    if match_row['Under 2.5'] > 0: opts[f"Under 2.5 ({match_row['Under 2.5']})"] = match_row['Under 2.5']
+                
+                if opts:
                     choice = st.selectbox("النتيجة:", list(opts.keys()))
                     selected_odd = opts[choice]
-                    selection_name = choice
-                
-                stake = st.number_input("المبلغ ($):", min_value=1.0, value=10.0, step=1.0)
-                if selected_odd > 0:
+                    stake = st.number_input("المبلغ ($):", min_value=1.0, value=10.0, step=1.0)
                     ret = stake * selected_odd
                     prof = ret - stake
-                    st.markdown(f"""
-                    <div class="profit-box">
-                        <ul style="margin:0; padding-left:20px">
-                            <li>العائد: <b>{ret:.2f}$</b></li>
-                            <li><b>صافي الربح: {prof:.2f}$ 🤑</b></li>
-                        </ul>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    st.markdown(f"""<div class="profit-box"><ul style="margin:0; padding-left:20px"><li>العائد: <b>{ret:.2f}$</b></li><li><b>صافي الربح: {prof:.2f}$ 🤑</b></li></ul></div>""", unsafe_allow_html=True)
+                else:
+                    st.warning("⚠️ لا توجد احتمالات متاحة لهذا السوق حالياً.")
 
-            # العمود 2: التقرير المفصل والرسوم
             with c2:
-                goals_probs = {}
-                if match_row['Over 2.5'] > 0:
-                    goals_probs, expected_goals = calculate_exact_goals(match_row['Over 2.5'], match_row['Under 2.5'])
-                    
-                    # عرض التقرير الجديد المفصل
-                    st.markdown('<div class="ai-box">', unsafe_allow_html=True)
-                    st.markdown(ai_analyst_report(match_row, expected_goals))
-                    st.markdown('</div>', unsafe_allow_html=True)
+                # الحساب دائماً يعمل، حتى لو الأهداف 0
+                goals_probs, expected_goals = calculate_exact_goals(match_row['Over 2.5'], match_row['Under 2.5'])
+                
+                st.markdown('<div class="ai-box">', unsafe_allow_html=True)
+                st.markdown(ai_analyst_report(match_row, expected_goals))
+                st.markdown('</div>', unsafe_allow_html=True)
 
-                st.markdown("**🔵 احتمالية الفوز:**")
-                h_prob = (1 / match_row['فوز المضيف (1)']) * 100
-                d_prob = (1 / match_row['تعادل (X)']) * 100
-                a_prob = (1 / match_row['فوز الضيف (2)']) * 100
-                chart_df = pd.DataFrame({'Team': [match_row['المضيف'], 'Draw', match_row['الضيف']], 'Prob': [h_prob, d_prob, a_prob]}).set_index('Team')
-                st.bar_chart(chart_df, color="#0083B8", height=200)
+                if match_row['فوز المضيف (1)'] > 0:
+                    st.markdown("**🔵 احتمالية الفوز:**")
+                    h_prob = (1 / match_row['فوز المضيف (1)']) * 100
+                    d_prob = (1 / match_row['تعادل (X)']) * 100
+                    a_prob = (1 / match_row['فوز الضيف (2)']) * 100
+                    chart_df = pd.DataFrame({'Team': [match_row['المضيف'], 'Draw', match_row['الضيف']], 'Prob': [h_prob, d_prob, a_prob]}).set_index('Team')
+                    st.bar_chart(chart_df, color="#0083B8", height=200)
 
                 if goals_probs:
                     st.markdown("**🔴 توقعات الأهداف:**")
