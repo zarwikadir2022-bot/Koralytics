@@ -3,7 +3,7 @@ import pandas as pd
 import requests
 import time
 import numpy as np
-from scipy.stats import poisson # مكتبة الحسابات الإحصائية للأهداف
+from scipy.stats import poisson
 
 # --- 1. إعدادات الصفحة ---
 st.set_page_config(
@@ -29,44 +29,28 @@ except:
 
 MY_PHONE_NUMBER = "21600000000" 
 
-# --- 3. محرك الذكاء الاصطناعي والإحصاء (AI Engine) ---
+# --- 3. محرك الذكاء الاصطناعي والإحصاء ---
 
 def calculate_exact_goals(over_odd, under_odd):
-    """
-    استخدام توزيع بواسون لتوقع عدد الأهداف بدقة بناءً على احتمالات Over/Under
-    """
-    # 1. حساب الاحتمالية الضمنية للسوق
+    """حساب احتمالات الأهداف الدقيقة (0-4+)"""
     prob_over = 1 / over_odd
     prob_under = 1 / under_odd
-    
-    # تصحيح الهامش (Margin removal) للحصول على احتمالات عادلة
     margin = prob_over + prob_under
     fair_prob_under = prob_under / margin
     
-    # 2. استنتاج معدل الأهداف المتوقع (Lambda) من احتمالية Under 2.5
-    # في توزيع بواسون: Prob(X < 2.5) تعتمد على المعدل lambda
-    # معادلة تقريبية عكسية لاستخراج Lambda
-    if fair_prob_under > 0.5:
-        expected_goals = 2.0 # مباراة مغلقة
-    elif fair_prob_under < 0.3:
-        expected_goals = 3.2 # مباراة مفتوحة جداً
-    else:
-        expected_goals = 2.7 # مباراة متوسطة
+    if fair_prob_under > 0.5: expected_goals = 2.0
+    elif fair_prob_under < 0.3: expected_goals = 3.2
+    else: expected_goals = 2.7
         
-    # 3. توليد احتمالات الأهداف (0, 1, 2, 3, 4+)
     goals_probs = {}
     for k in range(5):
         goals_probs[k] = poisson.pmf(k, expected_goals) * 100
-    
-    # تجميع 4 أهداف فما فوق
     goals_probs['4+'] = (1 - poisson.cdf(3, expected_goals)) * 100
     
     return goals_probs, expected_goals
 
 def ai_analyst_report(match_row, expected_goals):
-    """
-    توليد نص تحليلي ذكي بناءً على البيانات
-    """
+    """توليد التقرير النصي"""
     home = match_row['المضيف']
     away = match_row['الضيف']
     h_odd = match_row['فوز المضيف (1)']
@@ -75,24 +59,18 @@ def ai_analyst_report(match_row, expected_goals):
     report = f"**🤖 تقرير المحلل الذكي:**\n\n"
     
     # تحليل الفائز
-    if h_odd < 1.5:
-        report += f"• **النتيجة:** البيانات ترشح **{home}** باكتساح. المخاطرة منخفضة.\n"
-    elif a_odd < 1.5:
-        report += f"• **النتيجة:** البيانات ترشح **{away}** باكتساح.\n"
-    elif abs(h_odd - a_odd) < 0.5:
-        report += f"• **النتيجة:** مباراة معقدة ومتقاربة جداً (Derby Style). التعادل وارد بقوة.\n"
+    if h_odd < 1.5: report += f"• **النتيجة:** البيانات ترشح **{home}** باكتساح.\n"
+    elif a_odd < 1.5: report += f"• **النتيجة:** البيانات ترشح **{away}** باكتساح.\n"
+    elif abs(h_odd - a_odd) < 0.5: report += f"• **النتيجة:** مباراة صعبة جداً (Derby). التعادل وارد.\n"
     else:
         fav = home if h_odd < a_odd else away
-        report += f"• **النتيجة:** الأفضلية تميل لـ **{fav}** ولكن الحذر واجب.\n"
+        report += f"• **النتيجة:** الأفضلية لـ **{fav}**.\n"
         
     # تحليل الأهداف
-    report += f"• **معدل الأهداف المتوقع:** {expected_goals} هدف في المباراة.\n"
-    if expected_goals > 2.9:
-        report += "• **السيناريو:** نتوقع مباراة مفتوحة وهجومية (Open Game). خيار Over 2.5 ممتاز.\n"
-    elif expected_goals < 2.2:
-        report += "• **السيناريو:** نتوقع مباراة تكتيكية مغلقة دفاعياً (Under).\n"
-    else:
-        report += "• **السيناريو:** النسق سيكون متوسطاً.\n"
+    report += f"• **معدل الأهداف:** {expected_goals} هدف.\n"
+    if expected_goals > 2.9: report += "• **النمط:** مباراة هجومية مفتوحة (Over).\n"
+    elif expected_goals < 2.2: report += "• **النمط:** مباراة دفاعية مغلقة (Under).\n"
+    else: report += "• **النمط:** نسق متوسط.\n"
         
     return report
 
@@ -103,7 +81,7 @@ def check_password():
     with col2:
         st.image("https://cdn-icons-png.flaticon.com/512/3593/3593510.png", width=80)
         st.title("💎 Koralytics AI")
-        st.info("💡 التحليل بالذكاء الاصطناعي وتوقعات الأهداف الدقيقة.")
+        st.info("💡 التحليل بالذكاء الاصطناعي وتوقعات الأهداف.")
         wa_link = f"https://wa.me/{MY_PHONE_NUMBER}?text=مرحبا"
         st.link_button("📲 شراء مفتاح اشتراك", wa_link, use_container_width=True)
         with st.form("login_form"):
@@ -191,38 +169,54 @@ def show_app_content():
             st.subheader("🧠 غرفة المحلل الذكي (AI Room)")
             
             c1, c2 = st.columns([1, 1.5])
+            
+            # --- العمود الأول: التقرير النصي ---
             with c1:
                 matches_txt = [f"{row['المضيف']} vs {row['الضيف']}" for i, row in df.iterrows()]
                 sel_match = st.selectbox("اختر المباراة للتحليل:", matches_txt)
                 host = sel_match.split(" vs ")[0]
                 match_row = df[df['المضيف'] == host].iloc[0]
                 
-                # حسابات الذكاء الاصطناعي
+                # حسابات الأهداف
                 goals_probs = {}
                 expected_goals = 0
                 if match_row['Over 2.5'] > 0:
                     goals_probs, expected_goals = calculate_exact_goals(match_row['Over 2.5'], match_row['Under 2.5'])
                     
-                    # عرض تقرير المحلل
                     st.markdown('<div class="ai-box">', unsafe_allow_html=True)
                     st.markdown(ai_analyst_report(match_row, expected_goals))
                     st.markdown('</div>', unsafe_allow_html=True)
                 else:
-                    st.warning("بيانات الأهداف غير متوفرة لهذه المباراة للتحليل.")
+                    st.warning("بيانات الأهداف غير متوفرة.")
 
+            # --- العمود الثاني: الرسوم البيانية (تمت إعادة الرسم المفقود) ---
             with c2:
+                # 1. رسم احتمالات الفوز (Win Probability) - عاد من جديد!
+                st.write("🔵 **احتمالية الفوز (Win Probability):**")
+                
+                # نحول الـ Odds إلى نسبة مئوية (Prob = 1/Odd) لتكون منطقية في الرسم
+                h_prob = (1 / match_row['فوز المضيف (1)']) * 100
+                d_prob = (1 / match_row['تعادل (X)']) * 100
+                a_prob = (1 / match_row['فوز الضيف (2)']) * 100
+                
+                win_chart_df = pd.DataFrame({
+                    'Team': [match_row['المضيف'], 'Draw', match_row['الضيف']],
+                    'Probability (%)': [h_prob, d_prob, a_prob]
+                }).set_index('Team')
+                
+                st.bar_chart(win_chart_df, color="#0083B8") # لون أزرق
+
+                st.divider()
+
+                # 2. رسم الأهداف (Exact Goals)
                 if goals_probs:
-                    st.write("📈 **احتمالية عدد الأهداف (Exact Goals Probability):**")
+                    st.write("🔴 **توقعات عدد الأهداف (Exact Goals):**")
+                    goals_df = pd.DataFrame(list(goals_probs.items()), columns=['الأهداف', 'الاحتمال %'])
+                    goals_df.set_index('الأهداف', inplace=True)
+                    st.bar_chart(goals_df, color="#FF4B4B") # لون أحمر
                     
-                    # تحضير بيانات الرسم البياني
-                    goals_df = pd.DataFrame(list(goals_probs.items()), columns=['عدد الأهداف', 'الاحتمالية %'])
-                    goals_df.set_index('عدد الأهداف', inplace=True)
-                    
-                    st.bar_chart(goals_df, color="#FF4B4B")
-                    
-                    # عرض الاحتمال الأقوى كرقم
-                    best_goal_count = max(goals_probs, key=goals_probs.get)
-                    st.success(f"📌 السيناريو الأكثر احتمالاً: تسجيل **{best_goal_count}** أهداف في المباراة (بنسبة {goals_probs[best_goal_count]:.1f}%).")
+                    best_goal = max(goals_probs, key=goals_probs.get)
+                    st.caption(f"السيناريو الأقوى: {best_goal} أهداف.")
 
 # --- التشغيل ---
 def main():
