@@ -5,10 +5,11 @@ import time
 import urllib.parse
 import numpy as np
 from scipy.stats import poisson
+from datetime import datetime
 
 # --- 1. إعدادات الصفحة ---
 st.set_page_config(
-    page_title="Koralytics AI | Platinum V19",
+    page_title="Koralytics AI | V20",
     page_icon="⚽",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -20,10 +21,10 @@ st.markdown("""
     /* 1. الخلفية العامة (رصاصي فاتح متدرج) */
     .stApp {
         background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
-        color: #2c3e50; /* نص غامق لضمان الوضوح */
+        color: #2c3e50;
     }
     
-    /* 2. تحسين القائمة الجانبية (أبيض نقي) */
+    /* 2. القائمة الجانبية */
     section[data-testid="stSidebar"] {
         background-color: #ffffff;
         border-right: 1px solid #d1d5db;
@@ -31,11 +32,11 @@ st.markdown("""
     
     /* 3. العناوين والنصوص */
     h1, h2, h3 {
-        color: #2c3e50 !important; /* رمادي غامق مزرق */
+        color: #2c3e50 !important;
         font-family: 'Segoe UI', sans-serif;
     }
     
-    /* 4. الصناديق الزجاجية (Glassmorphism for Light Mode) */
+    /* 4. الصناديق الزجاجية */
     .glass-box {
         background: rgba(255, 255, 255, 0.7);
         backdrop-filter: blur(10px);
@@ -44,7 +45,7 @@ st.markdown("""
         border-radius: 16px;
         padding: 20px;
         margin-bottom: 20px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); /* ظل خفيف جداً */
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
     }
 
     /* 5. صندوق الذكاء الاصطناعي */
@@ -58,7 +59,7 @@ st.markdown("""
         box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
 
-    /* 6. صندوق الورقة (Ticket) */
+    /* 6. صندوق الورقة */
     .ticket-box {
         background: linear-gradient(45deg, #2c3e50, #4ca1af);
         color: white;
@@ -90,7 +91,7 @@ st.markdown("""
         box-shadow: 0 4px 10px rgba(41, 128, 185, 0.3);
     }
     
-    /* 9. الجداول (تحسين القراءة) */
+    /* 9. الجداول */
     div[data-testid="stDataFrame"] {
         background-color: #ffffff;
         border-radius: 10px;
@@ -98,8 +99,6 @@ st.markdown("""
         border: 1px solid #e0e0e0;
         box-shadow: 0 2px 5px rgba(0,0,0,0.03);
     }
-    
-    /* 10. نصوص الجدول */
     div[data-testid="stDataFrame"] * {
         color: #333 !important;
     }
@@ -112,7 +111,6 @@ try:
 except:
     API_KEY = "YOUR_ODDS_KEY"
 
-# ⚠️ ضع رقمك هنا
 MY_PHONE_NUMBER = "21600000000"
 
 # --- 4. إدارة الجلسات ---
@@ -397,10 +395,15 @@ def fetch_odds(sport_key):
 def process_data_with_logos(raw_data):
     matches = []
     debug_names = []
+    today_str = datetime.now().strftime('%Y-%m-%d')
     
     for match in raw_data:
         if not match['bookmakers']: continue
-        raw_date = match['commence_time'].replace('T', ' ')[:16]
+        # التاريخ والتوقيت
+        raw_date_full = match['commence_time'].replace('T', ' ')
+        raw_date = raw_date_full[:16] # YYYY-MM-DD HH:MM
+        match_day = raw_date_full[:10] # YYYY-MM-DD
+
         debug_names.append(f"{match['home_team']} 🆚 {match['away_team']}")
 
         mkts = match['bookmakers'][0]['markets']
@@ -422,8 +425,15 @@ def process_data_with_logos(raw_data):
         h_logo = get_team_logo(match['home_team'])
         a_logo = get_team_logo(match['away_team'])
         
+        # علامة مباريات اليوم
+        display_date = raw_date
+        is_today = (match_day == today_str)
+        if is_today:
+             display_date = f"🔥 {raw_date[11:]}" # Show only time with fire icon
+        
         matches.append({
-            "التوقيت": raw_date,
+            "التاريخ": match_day,
+            "التوقيت": display_date,
             "H_Logo": h_logo, "المضيف": match['home_team'], 
             "A_Logo": a_logo, "الضيف": match['away_team'],
             "1": h_odd, "X": d_odd, "2": a_odd,
@@ -480,8 +490,11 @@ def main():
 
         st.markdown("---")
         st.markdown("### ⚙️ أدوات")
+        # --- الفلتر الجديد ---
+        show_today_only = st.checkbox("📅 مباريات اليوم فقط", value=False)
         budget = st.number_input("💵 ميزانيتك ($):", 100.0, 50000.0, 500.0, step=50.0)
         show_gold = st.checkbox("🔥 عرض الفرص الذهبية")
+        
         if st.button("🔴 تسجيل خروج", use_container_width=True): logout_user()
 
     # --- Main Content ---
@@ -497,6 +510,13 @@ def main():
     if data:
         df = process_data_with_logos(data)
         
+        # --- تطبيق فلتر اليوم ---
+        if show_today_only and not df.empty:
+             today_str = datetime.now().strftime('%Y-%m-%d')
+             df = df[df['التاريخ'] == today_str]
+             if df.empty:
+                 st.info("🚫 لا توجد مباريات مبرمجة لليوم في هذه البطولة.")
+
         if show_gold and not df.empty:
             df = df[((1/df['1']) > 0.65) | ((1/df['2']) > 0.65)]
             if df.empty: st.warning("لا توجد فرص ذهبية حالياً.")
@@ -523,6 +543,7 @@ def main():
                     "1": st.column_config.NumberColumn("1 (Home)", format="%.2f"),
                     "X": st.column_config.NumberColumn("X (Draw)", format="%.2f"),
                     "2": st.column_config.NumberColumn("2 (Away)", format="%.2f"),
+                    "التاريخ": None # إخفاء عمود التاريخ لأنه مكرر
                 },
                 use_container_width=True,
                 hide_index=True
@@ -535,59 +556,60 @@ def main():
             with c1:
                 st.subheader("🔍 تفاصيل المباراة")
                 matches_txt = [f"{row['المضيف']} vs {row['الضيف']}" for i, row in df.iterrows()]
-                sel = st.selectbox("اختر المباراة:", matches_txt)
-                host = sel.split(" vs ")[0]
-                row = df[df['المضيف'] == host].iloc[0]
-                
-                col_img1, col_vs, col_img2 = st.columns([1,0.5,1])
-                with col_img1: st.image(row['H_Logo'], width=100)
-                with col_img2: st.image(row['A_Logo'], width=100)
-                
-                st.markdown("#### 💰 حاسبة الربح")
-                bet_type = st.radio("النوع", ["فوز (1X2)", "أهداف (O/U)"], horizontal=True, label_visibility="collapsed")
-                if bet_type == "فوز (1X2)":
-                    opts = {f"فوز {row['المضيف']}": row['1'], "تعادل": row['X'], f"فوز {row['الضيف']}": row['2']}
-                else:
-                    opts = {"Over 2.5": row['O 2.5'], "Under 2.5": row['U 2.5']}
-                
-                sel_opt = st.selectbox("النتيجة", list(opts.keys()))
-                val_odd = opts[sel_opt]
-                
-                if st.button(f"➕ أضف للورقة (@ {val_odd})", use_container_width=True):
-                    st.session_state["my_ticket"].append({"pick": sel_opt, "odd": val_odd})
-                    st.toast("✅ تمت الإضافة")
-                    time.sleep(0.5); st.rerun()
-                
-                stake = st.number_input("الرهان ($):", 1.0, 1000.0, 10.0)
-                st.markdown(f"<div class='profit-box'>الربح المتوقع: <b>{(stake * val_odd):.2f}$</b></div>", unsafe_allow_html=True)
+                if matches_txt:
+                    sel = st.selectbox("اختر المباراة:", matches_txt)
+                    host = sel.split(" vs ")[0]
+                    row = df[df['المضيف'] == host].iloc[0]
+                    
+                    col_img1, col_vs, col_img2 = st.columns([1,0.5,1])
+                    with col_img1: st.image(row['H_Logo'], width=100)
+                    with col_img2: st.image(row['A_Logo'], width=100)
+                    
+                    st.markdown("#### 💰 حاسبة الربح")
+                    bet_type = st.radio("النوع", ["فوز (1X2)", "أهداف (O/U)"], horizontal=True, label_visibility="collapsed")
+                    if bet_type == "فوز (1X2)":
+                        opts = {f"فوز {row['المضيف']}": row['1'], "تعادل": row['X'], f"فوز {row['الضيف']}": row['2']}
+                    else:
+                        opts = {"Over 2.5": row['O 2.5'], "Under 2.5": row['U 2.5']}
+                    
+                    sel_opt = st.selectbox("النتيجة", list(opts.keys()))
+                    val_odd = opts[sel_opt]
+                    
+                    if st.button(f"➕ أضف للورقة (@ {val_odd})", use_container_width=True):
+                        st.session_state["my_ticket"].append({"pick": sel_opt, "odd": val_odd})
+                        st.toast("✅ تمت الإضافة")
+                        time.sleep(0.5); st.rerun()
+                    
+                    stake = st.number_input("الرهان ($):", 1.0, 1000.0, 10.0)
+                    st.markdown(f"<div class='profit-box'>الربح المتوقع: <b>{(stake * val_odd):.2f}$</b></div>", unsafe_allow_html=True)
 
-            with c2:
-                probs, exp_goals = calculate_exact_goals(row['O 2.5'], row['U 2.5'])
-                report, risk = ai_analyst_report(row, exp_goals)
-                
-                st.markdown('<div class="ai-box">', unsafe_allow_html=True)
-                st.markdown(report)
-                st.markdown('</div>', unsafe_allow_html=True)
+                    with c2:
+                        probs, exp_goals = calculate_exact_goals(row['O 2.5'], row['U 2.5'])
+                        report, risk = ai_analyst_report(row, exp_goals)
+                        
+                        st.markdown('<div class="ai-box">', unsafe_allow_html=True)
+                        st.markdown(report)
+                        st.markdown('</div>', unsafe_allow_html=True)
 
-                rec_msg = "مغامرة!" if risk < 5 else "آمنة."
-                rec_amount = budget * (3 if risk > 7 else 1) / 100
-                st.markdown(f"""<div class="advisor-box">💡 <b>المستشار المالي:</b> الفرصة {rec_msg} ({risk}/10).<br>المبلغ المقترح: {rec_amount:.1f}$</div>""", unsafe_allow_html=True)
+                        rec_msg = "مغامرة!" if risk < 5 else "آمنة."
+                        rec_amount = budget * (3 if risk > 7 else 1) / 100
+                        st.markdown(f"""<div class="advisor-box">💡 <b>المستشار المالي:</b> الفرصة {rec_msg} ({risk}/10).<br>المبلغ المقترح: {rec_amount:.1f}$</div>""", unsafe_allow_html=True)
 
-                # --- الرسوم البيانية (موجودة ولم تختفِ) ---
-                st.markdown("#### 📊 الرسوم البيانية")
-                
-                # 1. رسم احتمالات الفوز (أزرق غامق ليناسب الرصاصي)
-                if row['1'] > 0:
-                    h_prob = (1 / row['1']) * 100
-                    d_prob = (1 / row['X']) * 100
-                    a_prob = (1 / row['2']) * 100
-                    chart_df = pd.DataFrame({'Team': [row['المضيف'], 'Draw', row['الضيف']], 'Prob': [h_prob, d_prob, a_prob]}).set_index('Team')
-                    st.bar_chart(chart_df, color=["#2980b9"]) 
-                
-                # 2. رسم توقعات الأهداف (أحمر)
-                if probs:
-                    goals_df = pd.DataFrame(list(probs.items()), columns=['Goals', 'Probability']).set_index('Goals')
-                    st.bar_chart(goals_df, color=["#e74c3c"])
+                        # --- الرسوم البيانية ---
+                        st.markdown("#### 📊 الرسوم البيانية")
+                        
+                        # 1. رسم احتمالات الفوز
+                        if row['1'] > 0:
+                            h_prob = (1 / row['1']) * 100
+                            d_prob = (1 / row['X']) * 100
+                            a_prob = (1 / row['2']) * 100
+                            chart_df = pd.DataFrame({'Team': [row['المضيف'], 'Draw', row['الضيف']], 'Prob': [h_prob, d_prob, a_prob]}).set_index('Team')
+                            st.bar_chart(chart_df, color=["#2980b9"]) 
+                        
+                        # 2. رسم توقعات الأهداف
+                        if probs:
+                            goals_df = pd.DataFrame(list(probs.items()), columns=['Goals', 'Probability']).set_index('Goals')
+                            st.bar_chart(goals_df, color=["#e74c3c"])
 
             st.markdown("</div>", unsafe_allow_html=True)
 
