@@ -8,94 +8,100 @@ from scipy.stats import poisson
 
 # --- 1. إعدادات الصفحة ---
 st.set_page_config(
-    page_title="Koralytics AI | Ultimate V18",
+    page_title="Koralytics AI | Platinum V19",
     page_icon="⚽",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- 2. التصميم البارد والمفتح (Lightened Ice Theme CSS) ---
+# --- 2. التصميم الرصاصي الفاتح (Platinum Theme CSS) ---
 st.markdown("""
 <style>
-    /* 1. الخلفية "الباردة" المفتحة قليلاً (Lighter Cool Gradient) */
+    /* 1. الخلفية العامة (رصاصي فاتح متدرج) */
     .stApp {
-        /* تم تفتيح الدرجات اللونية قليلاً عن النسخة السابقة */
-        background: linear-gradient(135deg, #243352 0%, #33476a 100%);
-        color: #f0f0f0;
+        background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+        color: #2c3e50; /* نص غامق لضمان الوضوح */
     }
     
-    /* 2. تحسين القائمة الجانبية */
+    /* 2. تحسين القائمة الجانبية (أبيض نقي) */
     section[data-testid="stSidebar"] {
-        background-color: rgba(0, 0, 0, 0.25);
-        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        background-color: #ffffff;
+        border-right: 1px solid #d1d5db;
     }
     
     /* 3. العناوين والنصوص */
     h1, h2, h3 {
-        color: #7ce0ff !important; /* سماوي أفتح قليلاً */
+        color: #2c3e50 !important; /* رمادي غامق مزرق */
         font-family: 'Segoe UI', sans-serif;
-        text-shadow: 0px 0px 12px rgba(124, 224, 255, 0.4);
     }
     
-    /* 4. الصناديق الزجاجية (Glassmorphism) */
+    /* 4. الصناديق الزجاجية (Glassmorphism for Light Mode) */
     .glass-box {
-        background: rgba(255, 255, 255, 0.08); /* زيادة الشفافية قليلاً */
-        backdrop-filter: blur(14px);
-        -webkit-backdrop-filter: blur(14px);
-        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid #ffffff;
         border-radius: 16px;
         padding: 20px;
         margin-bottom: 20px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); /* ظل خفيف جداً */
     }
 
     /* 5. صندوق الذكاء الاصطناعي */
     .ai-box {
-        background: linear-gradient(to right, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
-        border-right: 5px solid #7ce0ff;
+        background: #ffffff;
+        border-right: 5px solid #2980b9;
         padding: 20px;
         border-radius: 10px;
         margin-bottom: 15px;
-        color: #ffffff;
+        color: #333333;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
 
     /* 6. صندوق الورقة (Ticket) */
     .ticket-box {
-        background: linear-gradient(45deg, #3498db, #7ce0ff);
+        background: linear-gradient(45deg, #2c3e50, #4ca1af);
         color: white;
         font-weight: bold;
         padding: 15px;
         border-radius: 12px;
         margin-bottom: 10px;
-        box-shadow: 0 0 20px rgba(124, 224, 255, 0.4);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
     .ticket-item {border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 5px; margin-bottom: 5px;}
 
     /* 7. صندوق الأرباح والمستشار */
-    .profit-box {background-color: rgba(46, 204, 113, 0.2); border: 1px solid #2ecc71; color: #2ecc71; padding: 10px; border-radius: 8px; text-align: center;}
-    .advisor-box {background-color: rgba(241, 196, 15, 0.2); border: 1px solid #f1c40f; color: #f1c40f; padding: 10px; border-radius: 8px; font-size: 0.9em;}
+    .profit-box {background-color: #e8f8f5; border: 1px solid #2ecc71; color: #27ae60; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold;}
+    .advisor-box {background-color: #fef9e7; border: 1px solid #f1c40f; color: #d35400; padding: 10px; border-radius: 8px; font-size: 0.9em;}
     
     /* 8. الأزرار */
     div.stButton > button {
-        background: linear-gradient(90deg, #2c3e50 0%, #34495e 100%);
-        border: 1px solid #7ce0ff;
-        color: #7ce0ff;
+        background: linear-gradient(90deg, #2980b9 0%, #2c3e50 100%);
+        color: white;
+        border: none;
         border-radius: 8px;
         font-weight: bold;
         transition: 0.3s;
     }
     div.stButton > button:hover {
-        background: #7ce0ff;
-        color: #243352;
-        box-shadow: 0 0 20px rgba(124, 224, 255, 0.7);
+        background: #3498db;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(41, 128, 185, 0.3);
     }
     
-    /* 9. الجداول */
+    /* 9. الجداول (تحسين القراءة) */
     div[data-testid="stDataFrame"] {
-        background-color: rgba(255, 255, 255, 0.05);
+        background-color: #ffffff;
         border-radius: 10px;
         padding: 10px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        border: 1px solid #e0e0e0;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+    }
+    
+    /* 10. نصوص الجدول */
+    div[data-testid="stDataFrame"] * {
+        color: #333 !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -106,7 +112,8 @@ try:
 except:
     API_KEY = "YOUR_ODDS_KEY"
 
-MY_PHONE_NUMBER = "21694928912"
+# ⚠️ ضع رقمك هنا
+MY_PHONE_NUMBER = "21600000000"
 
 # --- 4. إدارة الجلسات ---
 @st.cache_resource
@@ -136,7 +143,7 @@ def logout_user():
 
 if "my_ticket" not in st.session_state: st.session_state["my_ticket"] = []
 
-# --- 5. جلب الشعارات (القائمة العملاقة الشاملة) ---
+# --- 5. جلب الشعارات (القائمة الكاملة) ---
 def get_team_logo(team_name):
     name_clean = team_name.lower().strip()
     
@@ -154,7 +161,7 @@ def get_team_logo(team_name):
         "gafsa": "https://upload.wikimedia.org/wikipedia/en/thumb/1/1e/EGS_Gafsa.png",
         "metlaoui": "https://upload.wikimedia.org/wikipedia/en/thumb/a/a8/ES_Metlaoui.png",
 
-        # 🇪🇸 أندية إسبانيا
+        # 🇪🇸 إسبانيا
         "real madrid": "https://upload.wikimedia.org/wikipedia/en/thumb/5/56/Real_Madrid_CF.svg/1200px-Real_Madrid_CF.svg.png",
         "barcelona": "https://upload.wikimedia.org/wikipedia/en/thumb/4/47/FC_Barcelona_%28crest%29.svg/1200px-FC_Barcelona_%28crest%29.svg.png",
         "atletico": "https://upload.wikimedia.org/wikipedia/en/thumb/f/f4/Atletico_Madrid_2017_logo.svg/1200px-Atletico_Madrid_2017_logo.svg.png",
@@ -167,7 +174,7 @@ def get_team_logo(team_name):
         "athletic club": "https://upload.wikimedia.org/wikipedia/en/thumb/9/98/Club_Athletic_Bilbao_logo.svg/1200px-Club_Athletic_Bilbao_logo.svg.png",
         "villarreal": "https://upload.wikimedia.org/wikipedia/en/thumb/7/70/Villarreal_CF_logo.svg/1200px-Villarreal_CF_logo.svg.png",
 
-        # 🇬🇧 أندية إنجلترا
+        # 🇬🇧 إنجلترا
         "man city": "https://upload.wikimedia.org/wikipedia/en/thumb/e/eb/Manchester_City_FC_badge.svg/1200px-Manchester_City_FC_badge.svg.png",
         "manchester city": "https://upload.wikimedia.org/wikipedia/en/thumb/e/eb/Manchester_City_FC_badge.svg/1200px-Manchester_City_FC_badge.svg.png",
         "man utd": "https://upload.wikimedia.org/wikipedia/en/thumb/7/7a/Manchester_United_FC_crest.svg/1200px-Manchester_United_FC_crest.svg.png",
@@ -181,7 +188,7 @@ def get_team_logo(team_name):
         "west ham": "https://upload.wikimedia.org/wikipedia/en/thumb/c/c2/West_Ham_United_FC_logo.svg/1200px-West_Ham_United_FC_logo.svg.png",
         "brighton": "https://upload.wikimedia.org/wikipedia/en/thumb/f/fd/Brighton_%26_Hove_Albion_logo.svg/1200px-Brighton_%26_Hove_Albion_logo.svg.png",
 
-        # 🇮🇹 أندية إيطاليا
+        # 🇮🇹 إيطاليا
         "inter": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/FC_Internazionale_Milano_2021.svg/1200px-FC_Internazionale_Milano_2021.svg.png",
         "milan": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/Logo_of_AC_Milan.svg/1200px-Logo_of_AC_Milan.svg.png",
         "juventus": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Juventus_FC_2017_icon_%28black%29.svg/1200px-Juventus_FC_2017_icon_%28black%29.svg.png",
@@ -191,7 +198,7 @@ def get_team_logo(team_name):
         "atalanta": "https://upload.wikimedia.org/wikipedia/en/thumb/6/66/AtalantaBC.svg/1200px-AtalantaBC.svg.png",
         "fiorentina": "https://upload.wikimedia.org/wikipedia/en/thumb/b/ba/ACF_Fiorentina_2.svg/1200px-ACF_Fiorentina_2.svg.png",
 
-        # 🇫🇷 أندية فرنسا
+        # 🇫🇷 فرنسا
         "psg": "https://upload.wikimedia.org/wikipedia/en/thumb/a/a7/Paris_Saint-Germain_F.C..svg/1200px-Paris_Saint-Germain_F.C..svg.png",
         "paris": "https://upload.wikimedia.org/wikipedia/en/thumb/a/a7/Paris_Saint-Germain_F.C..svg/1200px-Paris_Saint-Germain_F.C..svg.png",
         "marseille": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/Olympique_Marseille_logo.svg/1200px-Olympique_Marseille_logo.svg.png",
@@ -199,14 +206,14 @@ def get_team_logo(team_name):
         "monaco": "https://upload.wikimedia.org/wikipedia/en/thumb/b/ba/AS_Monaco_FC.svg/1200px-AS_Monaco_FC.svg.png",
         "lille": "https://upload.wikimedia.org/wikipedia/en/thumb/3/3f/LOSC_Lille_Logo.svg/1200px-LOSC_Lille_Logo.svg.png",
 
-        # 🇩🇪 أندية ألمانيا
+        # 🇩🇪 ألمانيا
         "bayern": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/FC_Bayern_M%C3%BCnchen_logo_%282017%29.svg/1200px-FC_Bayern_M%C3%BCnchen_logo_%282017%29.svg.png",
         "dortmund": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Borussia_Dortmund_logo.svg/1200px-Borussia_Dortmund_logo.svg.png",
         "leverkusen": "https://upload.wikimedia.org/wikipedia/en/thumb/5/59/Bayer_04_Leverkusen_logo.svg/1200px-Bayer_04_Leverkusen_logo.svg.png",
         "leipzig": "https://upload.wikimedia.org/wikipedia/en/thumb/0/04/RB_Leipzig_2014_logo.svg/1200px-RB_Leipzig_2014_logo.svg.png",
         "stuttgart": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/VfB_Stuttgart_1893_Logo.svg/1200px-VfB_Stuttgart_1893_Logo.svg.png",
 
-        # 🇵🇹🇳🇱 أندية البرتغال وهولندا
+        # 🇵🇹🇳🇱 البرتغال وهولندا
         "porto": "https://upload.wikimedia.org/wikipedia/en/thumb/f/f1/FC_Porto.svg/1200px-FC_Porto.svg.png",
         "benfica": "https://upload.wikimedia.org/wikipedia/en/thumb/a/a2/SL_Benfica_logo.svg/1200px-SL_Benfica_logo.svg.png",
         "sporting": "https://upload.wikimedia.org/wikipedia/en/thumb/e/e1/Sporting_Clube_de_Portugal_%28Logo%29.svg/1200px-Sporting_Clube_de_Portugal_%28Logo%29.svg.png",
@@ -214,9 +221,7 @@ def get_team_logo(team_name):
         "feyenoord": "https://upload.wikimedia.org/wikipedia/en/thumb/e/e3/Feyenoord_logo.svg/1200px-Feyenoord_logo.svg.png",
         "psv": "https://upload.wikimedia.org/wikipedia/en/thumb/0/05/PSV_Eindhoven.svg/1200px-PSV_Eindhoven.svg.png",
 
-        # ==========================================
-        # 🌍 أفريقيا (CAF) - المنتخبات
-        # ==========================================
+        # 🌍 أفريقيا (CAF)
         "tunisia": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Flag_of_Tunisia.svg/1200px-Flag_of_Tunisia.svg.png",
         "morocco": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Flag_of_Morocco.svg/1200px-Flag_of_Morocco.svg.png",
         "egypt": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Flag_of_Egypt.svg/1200px-Flag_of_Egypt.svg.png",
@@ -233,9 +238,7 @@ def get_team_logo(team_name):
         "dr congo": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Flag_of_the_Democratic_Republic_of_the_Congo.svg/1200px-Flag_of_the_Democratic_Republic_of_the_Congo.svg.png",
         "guinea": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ed/Flag_of_Guinea.svg/1200px-Flag_of_Guinea.svg.png",
 
-        # ==========================================
-        # 🇪🇺 أوروبا (UEFA) - المنتخبات
-        # ==========================================
+        # 🇪🇺 أوروبا (UEFA)
         "france": "https://upload.wikimedia.org/wikipedia/en/thumb/c/c3/Flag_of_France.svg/1200px-Flag_of_France.svg.png",
         "germany": "https://upload.wikimedia.org/wikipedia/en/thumb/b/ba/Flag_of_Germany.svg/1200px-Flag_of_Germany.svg.png",
         "england": "https://upload.wikimedia.org/wikipedia/en/thumb/b/be/Flag_of_England.svg/1200px-Flag_of_England.svg.png",
@@ -259,9 +262,7 @@ def get_team_logo(team_name):
         "czech republic": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Flag_of_the_Czech_Republic.svg/1200px-Flag_of_the_Czech_Republic.svg.png",
         "greece": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Flag_of_Greece.svg/1200px-Flag_of_Greece.svg.png",
 
-        # ==========================================
-        # 🌎 أمريكا الجنوبية (CONMEBOL) - المنتخبات
-        # ==========================================
+        # 🌎 أمريكا الجنوبية (CONMEBOL)
         "brazil": "https://upload.wikimedia.org/wikipedia/en/thumb/0/05/Flag_of_Brazil.svg/1200px-Flag_of_Brazil.svg.png",
         "argentina": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Flag_of_Argentina.svg/1200px-Flag_of_Argentina.svg.png",
         "uruguay": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Flag_of_Uruguay.svg/1200px-Flag_of_Uruguay.svg.png",
@@ -272,9 +273,7 @@ def get_team_logo(team_name):
         "paraguay": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/Flag_of_Paraguay.svg/1200px-Flag_of_Paraguay.svg.png",
         "venezuela": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Flag_of_Venezuela.svg/1200px-Flag_of_Venezuela.svg.png",
 
-        # ==========================================
-        # 🌏 آسيا (AFC) + العرب - المنتخبات
-        # ==========================================
+        # 🌏 آسيا (AFC)
         "saudi arabia": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Flag_of_Saudi_Arabia.svg/1200px-Flag_of_Saudi_Arabia.svg.png",
         "qatar": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Flag_of_Qatar.svg/1200px-Flag_of_Qatar.svg.png",
         "japan": "https://upload.wikimedia.org/wikipedia/en/thumb/9/9e/Flag_of_Japan.svg/1200px-Flag_of_Japan.svg.png",
@@ -287,9 +286,7 @@ def get_team_logo(team_name):
         "oman": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Flag_of_Oman.svg/1200px-Flag_of_Oman.svg.png",
         "uzbekistan": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Flag_of_Uzbekistan.svg/1200px-Flag_of_Uzbekistan.svg.png",
 
-        # ==========================================
-        # 🌎 أمريكا الشمالية (CONCACAF) - المنتخبات
-        # ==========================================
+        # 🌎 أمريكا الشمالية (CONCACAF)
         "usa": "https://upload.wikimedia.org/wikipedia/en/thumb/a/a4/Flag_of_the_United_States.svg/1200px-Flag_of_the_United_States.svg.png",
         "united states": "https://upload.wikimedia.org/wikipedia/en/thumb/a/a4/Flag_of_the_United_States.svg/1200px-Flag_of_the_United_States.svg.png",
         "mexico": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Flag_of_Mexico.svg/1200px-Flag_of_Mexico.svg.png",
@@ -372,7 +369,7 @@ def check_password():
         st.markdown("**بوابة التحليل الرياضي الذكي**")
         st.markdown("</div>", unsafe_allow_html=True)
         
-        wa_link = f"https://wa.me/{+21694928912}?text=شراء مفتاح"
+        wa_link = f"https://wa.me/{MY_PHONE_NUMBER}?text=شراء مفتاح"
         st.link_button("📲 شراء مفتاح (VIP)", wa_link, use_container_width=True)
         
         with st.form("login_form"):
@@ -393,7 +390,7 @@ def check_password():
 def fetch_odds(sport_key):
     try:
         r = requests.get(f'https://api.the-odds-api.com/v4/sports/{sport_key}/odds', 
-                         params={'apiKey': API_KEY, 'regions': 'eu,us', 'markets': 'h2h,totals', 'oddsFormat': 'decimal'}) # Added 'us' for more national games
+                         params={'apiKey': API_KEY, 'regions': 'eu,us', 'markets': 'h2h,totals', 'oddsFormat': 'decimal'})
         return (r.json(), None) if r.status_code == 200 else (None, str(r.status_code))
     except Exception as e: return None, str(e)
 
@@ -579,18 +576,18 @@ def main():
                 # --- الرسوم البيانية (موجودة ولم تختفِ) ---
                 st.markdown("#### 📊 الرسوم البيانية")
                 
-                # 1. رسم احتمالات الفوز (أزرق سماوي)
+                # 1. رسم احتمالات الفوز (أزرق غامق ليناسب الرصاصي)
                 if row['1'] > 0:
                     h_prob = (1 / row['1']) * 100
                     d_prob = (1 / row['X']) * 100
                     a_prob = (1 / row['2']) * 100
                     chart_df = pd.DataFrame({'Team': [row['المضيف'], 'Draw', row['الضيف']], 'Prob': [h_prob, d_prob, a_prob]}).set_index('Team')
-                    st.bar_chart(chart_df, color=["#7ce0ff"]) 
+                    st.bar_chart(chart_df, color=["#2980b9"]) 
                 
-                # 2. رسم توقعات الأهداف (أحمر فاتح)
+                # 2. رسم توقعات الأهداف (أحمر)
                 if probs:
                     goals_df = pd.DataFrame(list(probs.items()), columns=['Goals', 'Probability']).set_index('Goals')
-                    st.bar_chart(goals_df, color=["#ff8787"])
+                    st.bar_chart(goals_df, color=["#e74c3c"])
 
             st.markdown("</div>", unsafe_allow_html=True)
 
