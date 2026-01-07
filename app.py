@@ -9,51 +9,105 @@ from datetime import datetime
 
 # --- 1. إعدادات الصفحة ---
 st.set_page_config(
-    page_title="Koralytics AI | V20 Pro Ultimate",
-    page_icon="⚽",
+    page_title="Koralytics AI | Platinum Crystal",
+    page_icon="💎",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- 2. محرك عداد الزوار الذكي (مرة واحدة لكل جلسة) ---
+# --- 2. محرك عداد الزوار الذكي ---
 def get_unique_visitors():
     count_file = "visit_count.txt"
     if 'visited' not in st.session_state:
         if not os.path.exists(count_file):
             with open(count_file, "w") as f: f.write("0")
-        
         with open(count_file, "r") as f:
             try: current_count = int(f.read())
             except: current_count = 0
-            
         new_count = current_count + 1
         with open(count_file, "w") as f: f.write(str(new_count))
-        
         st.session_state['visited'] = True
         st.session_state['total_visitors'] = new_count
-    
     return st.session_state.get('total_visitors', 0)
 
-# --- 3. التصميم البلاتيني الاحترافي (CSS) ---
+# --- 3. التصميم البلاتيني الكريستالي الفاخر (CSS) ---
 st.markdown("""
 <style>
-    .stApp { background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%); color: #2c3e50; }
-    .glass-box { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border: 1px solid #ffffff; border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); }
-    .ai-box { background: #ffffff; border-right: 5px solid #2980b9; padding: 20px; border-radius: 10px; margin-bottom: 15px; color: #333333; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-    .ticket-box { background: linear-gradient(45deg, #2c3e50, #4ca1af); color: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-    .visitor-badge { text-align:center; padding:12px; background:white; border-radius:12px; border:1px solid #d1d5db; margin-bottom:20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    .profit-box {background-color: #e8f8f5; border: 1px solid #2ecc71; color: #27ae60; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold;}
-    .advisor-box {background-color: #fef9e7; border: 1px solid #f1c40f; color: #d35400; padding: 10px; border-radius: 8px; font-size: 0.9em;}
+    /* الخلفية العامة: تدرج رمادي معدني عميق */
+    .stApp {
+        background: radial-gradient(circle at top right, #e0e0e0, #bdbdbd, #9e9e9e);
+        background-attachment: fixed;
+        color: #1a1a1a;
+    }
+
+    /* تصميم القائمة الجانبية الكريستالي */
+    section[data-testid="stSidebar"] {
+        background: rgba(255, 255, 255, 0.4) !important;
+        backdrop-filter: blur(15px);
+        border-right: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    /* الصناديق الكريستالية مع ظلال ناعمة */
+    .crystal-card {
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(12px);
+        border-radius: 20px;
+        padding: 25px;
+        margin-bottom: 25px;
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.1), 
+                    -5px -5px 15px rgba(255, 255, 255, 0.7);
+    }
+
+    /* صندوق الذكاء الاصطناعي الفاخر */
+    .ai-box {
+        background: linear-gradient(145deg, #ffffff, #e6e6e6);
+        border-right: 6px solid #424242;
+        padding: 20px;
+        border-radius: 12px;
+        color: #212121;
+        box-shadow: inset 2px 2px 5px rgba(0,0,0,0.05), 4px 4px 10px rgba(0,0,0,0.1);
+    }
+
+    /* عداد الزوار بتصميم Neumorphism */
+    .visitor-badge {
+        text-align:center; 
+        padding:15px; 
+        background: #e0e0e0;
+        border-radius: 15px;
+        box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+        margin-bottom: 20px;
+    }
+
+    /* الأزرار البلاتينية */
+    div.stButton > button {
+        background: linear-gradient(145deg, #757575, #424242);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 24px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        box-shadow: 4px 4px 8px rgba(0,0,0,0.2);
+    }
+    div.stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 6px 6px 12px rgba(0,0,0,0.3);
+        background: #212121;
+        color: #ffffff;
+    }
+
+    /* تحسين شكل الجداول */
+    div[data-testid="stDataFrame"] {
+        background: rgba(255, 255, 255, 0.5);
+        border-radius: 15px;
+        padding: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.8);
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 4. إعدادات المفاتيح وإدارة التذاكر ---
-try: API_KEY = st.secrets["ODDS_API_KEY"]
-except: API_KEY = "YOUR_API_KEY"
-
-if "my_ticket" not in st.session_state: st.session_state["my_ticket"] = []
-
-# --- 5. المحركات الإحصائية (أهداف، فوز، بطاقات) ---
+# --- 4. المحركات الإحصائية ---
 def get_match_metrics(row):
     h_odd, a_odd, d_odd = row['1'], row['2'], row['X']
     h_p, a_p, d_p = (1/h_odd), (1/a_odd), (1/d_odd)
@@ -66,15 +120,18 @@ def get_match_metrics(row):
     xg = 1.9 if prob_u > 0.55 else 3.4 if prob_u < 0.30 else 2.6
     return (h_p/total)*100, (d_p/total)*100, (a_p/total)*100, h_cards, a_cards, red_p, xg
 
-# --- 6. جلب البيانات ---
+# --- 5. جلب البيانات من API ---
 @st.cache_data(ttl=3600)
 def fetch_leagues():
-    try: return requests.get(f'https://api.the-odds-api.com/v4/sports/?apiKey={API_KEY}').json()
+    try:
+        API_KEY = st.secrets["ODDS_API_KEY"]
+        return requests.get(f'https://api.the-odds-api.com/v4/sports/?apiKey={API_KEY}').json()
     except: return []
 
 @st.cache_data(ttl=3600)
 def fetch_odds(l_key):
     try:
+        API_KEY = st.secrets["ODDS_API_KEY"]
         r = requests.get(f'https://api.the-odds-api.com/v4/sports/{l_key}/odds', params={'apiKey': API_KEY, 'regions': 'eu', 'markets': 'h2h,totals', 'oddsFormat': 'decimal'})
         res = []
         for m in r.json():
@@ -91,51 +148,41 @@ def fetch_odds(l_key):
         return pd.DataFrame(res)
     except: return pd.DataFrame()
 
-# --- 7. التطبيق الرئيسي ---
+# --- 6. التطبيق الرئيسي ---
 def main():
     visitors = get_unique_visitors()
 
-    # --- القائمة الجانبية ---
-    st.sidebar.title("💎 Koralytics AI")
-    
+    # --- القائمة الجانبية البلاتينية ---
     st.sidebar.markdown(f"""
         <div class="visitor-badge">
-            <span style="color:#7f8c8d; font-size:0.8rem; font-weight:bold;">الزوار الفريدون</span><br>
-            <span style="color:#2c3e50; font-size:1.6rem; font-weight:bold;">👤 {visitors}</span>
+            <span style="color:#616161; font-size:0.85rem; font-weight:bold;">CRYSTAL AUDIENCE</span><br>
+            <span style="color:#212121; font-size:1.8rem; font-weight:bold;">👤 {visitors}</span>
         </div>
     """, unsafe_allow_html=True)
 
     sports = fetch_leagues()
-    if not sports: st.sidebar.error("تأكد من الـ API KEY"); return
+    if not sports:
+        st.sidebar.error("API Key Required")
+        return
     
-    # ترتيب الرياضات: جعل Soccer في المقدمة
+    # وضع Soccer في المقدمة
     grps = sorted(list(set([s['group'] for s in sports])))
     if "Soccer" in grps:
         grps.remove("Soccer")
-        grps.insert(0, "Soccer") # وضع كرة القدم في أول القائمة
+        grps.insert(0, "Soccer")
     
-    sel_grp = st.sidebar.selectbox("🏅 الرياضة", grps)
+    sel_grp = st.sidebar.selectbox("🏅 Premium Sport", grps)
     l_map = {s['title']: s['key'] for s in sports if s['group'] == sel_grp}
-    sel_l = st.sidebar.selectbox("🏆 البطولة", list(l_map.keys()))
+    sel_l = st.sidebar.selectbox("🏆 Platinum League", list(l_map.keys()))
     
-    budget = st.sidebar.number_input("💵 ميزانيتك ($):", 10.0, 10000.0, 500.0)
-
-    if st.session_state["my_ticket"]:
-        st.sidebar.markdown('<div class="ticket-box">#### 🧾 ورقتي الحالية', unsafe_allow_html=True)
-        total_odd = 1.0
-        for itm in st.session_state["my_ticket"]:
-            st.sidebar.write(f"✅ {itm['pick']} | {itm['odd']}")
-            total_odd *= itm['odd']
-        st.sidebar.write(f"**Total Odd: {total_odd:.2f}**")
-        if st.sidebar.button("🗑️ مسح الورقة"): st.session_state["my_ticket"] = []; st.rerun()
-        st.sidebar.markdown('</div>', unsafe_allow_html=True)
+    budget = st.sidebar.number_input("💵 Wallet ($):", 10.0, 10000.0, 500.0)
 
     # --- المحتوى الرئيسي ---
-    st.title(f"⚽ {sel_l}")
+    st.title(f"💎 {sel_l} Crystal Analysis")
     df = fetch_odds(l_map[sel_l])
     
     if not df.empty:
-        if st.button("🪄 العصا السحرية (أفضل 3 فرص)"):
+        if st.button("🪄 Magic Wand (Best 3 Picks)"):
             best = df.sort_values(by="1", ascending=True).head(3)
             st.session_state["my_ticket"] = [{"pick": f"Win {r['المضيف']}", "odd": r['1']} for _, r in best.iterrows()]
             st.rerun()
@@ -143,39 +190,40 @@ def main():
         st.dataframe(df, use_container_width=True, hide_index=True)
         
         st.markdown("---")
-        st.markdown("<div class='glass-box'>", unsafe_allow_html=True)
         
-        sel_m = st.selectbox("🎯 حلل المباراة الآن:", [f"{r['المضيف']} vs {r['الضيف']}" for _, r in df.iterrows()])
+        # حاوية الكريستال الكبيرة
+        st.markdown("<div class='crystal-card'>", unsafe_allow_html=True)
+        
+        sel_m = st.selectbox("🎯 Select Match for Deep Crystal Analysis:", [f"{r['المضيف']} vs {r['الضيف']}" for _, r in df.iterrows()])
         row = df[df['المضيف'] == sel_m.split(" vs ")[0]].iloc[0]
         
         p1, px, p2, hc, ac, rp, xg = get_match_metrics(row)
         
         col_a, col_b = st.columns([1, 1.5])
         with col_a:
-            st.subheader("💰 استثمار")
-            stake = st.number_input("مبلغ الرهان ($):", 1.0, 1000.0, 10.0)
-            pick_res = st.selectbox("توقعك:", [row['المضيف'], "تعادل", row['الضيف']])
-            v_odd = row['1'] if pick_res==row['المضيف'] else row['X'] if pick_res=="تعادل" else row['2']
+            st.subheader("💰 Smart Investment")
+            stake = st.number_input("Stake Amount ($):", 1.0, 1000.0, 10.0)
+            pick_res = st.selectbox("Your Pick:", [row['المضيف'], "Draw", row['الضيف']])
+            v_odd = row['1'] if pick_res==row['المضيف'] else row['X'] if pick_res=="Draw" else row['2']
             
-            if st.button(f"➕ إضافة للورقة (@{v_odd})"):
-                st.session_state["my_ticket"].append({"pick": f"{pick_res}", "odd": v_odd})
-                st.rerun()
-            
-            st.markdown(f"<div class='profit-box'>الربح المتوقع: {(stake*v_odd):.2f}$</div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='advisor-box'>💡 <b>المستشار:</b> يُنصح بمبلغ {(budget * (p1/100) * 0.05):.1f}$ لهذا اللقاء</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='background:#f5f5f5; padding:15px; border-radius:10px; text-align:center; border:1px solid #ddd;'>Expected Return: <b>{(stake*v_odd):.2f}$</b></div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='advisor-box'>💡 <b>Crystal Advisor:</b> Suggested entry for this high-precision match is {(budget * (p1/100) * 0.05):.1f}$</div>", unsafe_allow_html=True)
 
         with col_b:
-            st.subheader("📊 ذكاء المباراة")
+            st.subheader("📊 Intelligence Core")
             st.markdown(f"""<div class='ai-box'>
-                <b>الاحتمالات الإحصائية:</b> الأرض {p1:.1f}% | تعادل {px:.1f}% | الضيف {p2:.1f}% <br>
-                <b>رادار البطاقات:</b> 🟨 للأرض {hc} | 🟨 للضيف {ac} | 🟥 طرد {rp}% <br>
-                <b>الأهداف المتوقعة:</b> {xg:.2f} (xG)
+                <b>Probability Matrix:</b> Home {p1:.1f}% | Draw {px:.1f}% | Away {p2:.1f}% <br>
+                <b>Discipline Radar:</b> 🟨 Home {hc} | 🟨 Away {ac} | 🟥 Red Card {rp}% <br>
+                <b>Crystal xG:</b> {xg:.2f}
             </div>""", unsafe_allow_html=True)
             
-            tabs = st.tabs(["📈 احتمالات الفوز", "🟨 رادار الخشونة"])
-            with tabs[0]: st.bar_chart(pd.DataFrame({'Prob': [p1, px, p2]}, index=[row['المضيف'], 'Draw', row['الضيف']]))
-            with tabs[1]: st.bar_chart(pd.DataFrame({'Cards': [hc, ac]}, index=[row['المضيف'], row['الضيف']]), color="#f1c40f")
+            tabs = st.tabs(["📈 Win Probability", "🟨 Intensity Radar"])
+            with tabs[0]: 
+                st.bar_chart(pd.DataFrame({'Prob': [p1, px, p2]}, index=[row['المضيف'], 'Draw', row['الضيف']]), color="#424242")
+            with tabs[1]: 
+                st.bar_chart(pd.DataFrame({'Cards': [hc, ac]}, index=[row['المضيف'], row['الضيف']]), color="#757575")
 
         st.markdown("</div>", unsafe_allow_html=True)
 
-if __name__ == '__main__': main()
+if __name__ == '__main__':
+    main()
