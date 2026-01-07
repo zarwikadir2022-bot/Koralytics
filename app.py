@@ -5,7 +5,7 @@ import os
 from datetime import datetime, timedelta
 
 # --- 1. إعدادات الصفحة ---
-st.set_page_config(page_title="Koralytics AI | Analytics Pro", page_icon="💎", layout="wide")
+st.set_page_config(page_title="Koralytics AI | Master", page_icon="💎", layout="wide")
 
 # --- 2. محرك الإحصائيات الفولاذي ---
 def get_stat(feat):
@@ -26,7 +26,6 @@ def update_stat(feat):
         f.write(str(new_val))
     return new_val
 
-# --- محرك رصد الدوريات (نسخة محسنة لضمان الظهور) ---
 def track_league(league_name):
     fn = "stat_leagues.txt"
     with open(fn, "a", encoding="utf-8") as f:
@@ -39,9 +38,7 @@ def get_popular_leagues():
         with open(fn, "r", encoding="utf-8") as f:
             leagues = f.read().splitlines()
         if not leagues: return {}
-        # تصفية النصوص الفارغة وحساب التكرار
-        counts = pd.Series([l for l in leagues if l]).value_counts().head(3).to_dict()
-        return counts
+        return pd.Series([l for l in leagues if l]).value_counts().head(3).to_dict()
     except: return {}
 
 # --- 3. محرك التوقيت والنتائج ---
@@ -60,7 +57,7 @@ def predict_exact_score(p1, px, p2, xg):
         if p2 > 60: return "0 - 3" if xg > 3.0 else "0 - 2"
         return "1 - 2" if xg > 2.2 else "0 - 1"
 
-# --- 4. التصميم الفاخر (CSS) ---
+# --- 4. التصميم (CSS) ---
 st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
@@ -83,10 +80,9 @@ if 'v' not in st.session_state:
 
 st.markdown(f"""
 <div class="ticker-wrap"><div class="ticker">
-    <span style="padding:0 30px;">⚽ للتواصل و الاستفسار 94928912</span>
     <span style="padding:0 30px;">🚀 Koralytics AI | إجمالي الزوار: {get_stat('unique_visitors')}</span>
     <span style="padding:0 30px;">🎯 تحليلات اليوم: {get_stat('deep_analysis')}</span>
-    <span style="padding:0 30px;">⚽ توقعات دقيقة بالذكاء الاصطناعي بتوقيت تونس</span>
+    <span style="padding:0 30px;">⚽ توقعات ذكية بتوقيت تونس لجميع الدوريات العالمية</span>
 </div></div>
 """, unsafe_allow_html=True)
 
@@ -125,7 +121,6 @@ try:
     sel_l_name = st.sidebar.selectbox("🏆 البطولة", list(l_map.keys()))
     budget = st.sidebar.number_input("💵 الميزانية ($):", 10, 5000, 500)
     
-    # عرض الاهتمامات (دائماً ظاهرة الآن)
     st.sidebar.markdown("---")
     st.sidebar.subheader("🔥 الأكثر طلباً الآن")
     pop_leagues = get_popular_leagues()
@@ -133,7 +128,7 @@ try:
         for league, count in pop_leagues.items():
             st.sidebar.markdown(f"<div><span class='popular-tag'>{count}</span> {league}</div>", unsafe_allow_html=True)
     else:
-        st.sidebar.write("جاري جمع البيانات...")
+        st.sidebar.write("جاري الرصد...")
 except: st.error("خطأ في البيانات"); st.stop()
 
 # --- 8. العرض الرئيسي ---
@@ -145,17 +140,19 @@ if not df.empty:
 
     st.markdown("---")
     st.header("🔬 المختبر الإحصائي")
-    sel_m = st.selectbox("🎯 اختر مباراة للتحليل:", [f"{r['المضيف']} ضد {r['الضيف']}" for _, r in df.iterrows()])
+    
+    # اختيار المباراة
+    match_list = [f"{r['المضيف']} ضد {r['الضيف']}" for _, r in df.iterrows()]
+    sel_m = st.selectbox("🎯 اختر مباراة للتحليل:", match_list)
     row = df[df['المضيف'] == sel_m.split(" ضد ")[0]].iloc[0]
 
-    # تحديث الإحصائيات عند التحليل
+    # منطق التحديث الصامت (بدون إعادة تشغيل الصفحة كاملة)
     if 'last_analyzed' not in st.session_state or st.session_state['last_analyzed'] != sel_m:
         update_stat("deep_analysis")
-        track_league(sel_l_name) 
+        track_league(sel_l_name)
         st.session_state['last_analyzed'] = sel_m
-        st.rerun() # تحديث الصفحة فوراً لإظهار التغيير في اللوحة
 
-    # الحسابات
+    # الحسابات (تعمل دائماً وبشكل ظاهر)
     h_p, a_p, d_p = (1/row['1']), (1/row['2']), (1/row['X'])
     total = h_p + a_p + d_p
     p1, px, p2 = (h_p/total)*100, (d_p/total)*100, (a_p/total)*100
@@ -163,16 +160,19 @@ if not df.empty:
     score = predict_exact_score(p1, px, p2, xg)
     tight = 1 - abs((p1/100) - (p2/100))
 
+    # عرض بانر النتيجة
     st.markdown(f'<div class="score-banner"><small>النتيجة المتوقعة</small><br><span style="font-size:3.5rem;">{score}</span></div>', unsafe_allow_html=True)
     
+    # عرض الرادار والأرقام (تم تثبيتها)
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("📊 احتمالات الفوز")
         st.bar_chart(pd.DataFrame({'%': [p1, px, p2]}, index=[row['المضيف'], 'تعادل', row['الضيف']]))
     with col2:
         st.subheader("📝 رادار المباراة")
-        st.markdown(f'<div class="stat-box">🥅 الأهداف (xG): {xg}</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="stat-box" style="border-right-color:gold;">🟨 البطاقات: {round(2.5+tight*3,1)}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="stat-box">🥅 الأهداف المتوقعة (xG): {xg}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="stat-box" style="border-right-color:gold;">🟨 البطاقات الصفراء: {round(2.5+tight*3,1)}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="stat-box" style="border-right-color:#ef4444;">🟥 احتمالية الطرد: {int(tight*35)}%</div>', unsafe_allow_html=True)
         st.info(f"🎯 مؤشر الثقة: {int(max(p1,p2,px)+12)}%")
 else:
     st.info("لا توجد مباريات جارية.")
