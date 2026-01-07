@@ -26,7 +26,7 @@ def update_stat(feat):
         f.write(str(new_val))
     return new_val
 
-# --- الجديد: محرك رصد الدوريات ---
+# --- محرك رصد الدوريات (نسخة محسنة لضمان الظهور) ---
 def track_league(league_name):
     fn = "stat_leagues.txt"
     with open(fn, "a", encoding="utf-8") as f:
@@ -39,7 +39,9 @@ def get_popular_leagues():
         with open(fn, "r", encoding="utf-8") as f:
             leagues = f.read().splitlines()
         if not leagues: return {}
-        return pd.Series(leagues).value_counts().head(3).to_dict()
+        # تصفية النصوص الفارغة وحساب التكرار
+        counts = pd.Series([l for l in leagues if l]).value_counts().head(3).to_dict()
+        return counts
     except: return {}
 
 # --- 3. محرك التوقيت والنتائج ---
@@ -70,7 +72,7 @@ st.markdown(f"""
     .match-card {{ background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; }}
     .score-banner {{ background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%); color: #fbbf24; padding: 30px; border-radius: 20px; text-align: center; border: 2px solid #fbbf24; margin-bottom: 25px; }}
     .stat-box {{ background: white; padding: 12px; border-radius: 10px; border-right: 6px solid #1e3a8a; margin-bottom: 10px; border: 1px solid #e2e8f0; font-weight: bold; }}
-    .popular-tag {{ background: #e0e7ff; color: #1e3a8a; padding: 2px 8px; border-radius: 5px; font-size: 0.8rem; margin-right: 5px; }}
+    .popular-tag {{ background: #1e3a8a; color: white; padding: 2px 8px; border-radius: 5px; font-size: 0.8rem; margin-left: 5px; }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -81,10 +83,10 @@ if 'v' not in st.session_state:
 
 st.markdown(f"""
 <div class="ticker-wrap"><div class="ticker">
-    <span style="padding:0 30px;">⚽ Koralytics AI: في خدمتكم للتواصل و الاستفسار 94928912</span>
-    <span style="padding:0 30px;">🚀 مرحباً بزوارنا الكرام | إجمالي الزوار: {get_stat('unique_visitors')}</span>
-    <span style="padding:0 30px;">🎯 إجمالي التحليلات المنجزة: {get_stat('deep_analysis')}</span>
-    <span style="padding:0 30px;">⚽ Koralytics AI: رادارك الذكي لتوقع النتائج والبطاقات</span>
+    <span style="padding:0 30px;">⚽ للتواصل و الاستفسار 94928912</span>
+    <span style="padding:0 30px;">🚀 Koralytics AI | إجمالي الزوار: {get_stat('unique_visitors')}</span>
+    <span style="padding:0 30px;">🎯 تحليلات اليوم: {get_stat('deep_analysis')}</span>
+    <span style="padding:0 30px;">⚽ توقعات دقيقة بالذكاء الاصطناعي بتوقيت تونس</span>
 </div></div>
 """, unsafe_allow_html=True)
 
@@ -121,15 +123,17 @@ try:
     sel_group = st.sidebar.selectbox("🏀 نوع الرياضة", sport_groups, index=sport_groups.index('Soccer') if 'Soccer' in sport_groups else 0)
     l_map = {s['title']: s['key'] for s in sports_data if s['group'] == sel_group}
     sel_l_name = st.sidebar.selectbox("🏆 البطولة", list(l_map.keys()))
-    budget = st.sidebar.number_input("💵 ميزانية المحفظة ($):", 10, 5000, 500)
+    budget = st.sidebar.number_input("💵 الميزانية ($):", 10, 5000, 500)
     
-    # عرض الاهتمامات (لك أنت يا عبد القادر)
-    pop = get_popular_leagues()
-    if pop:
-        st.sidebar.markdown("---")
-        st.sidebar.subheader("🔥 الأكثر طلباً الآن:")
-        for league, count in pop.items():
-            st.sidebar.markdown(f"<span class='popular-tag'>{count} تحليل</span> {league}", unsafe_allow_html=True)
+    # عرض الاهتمامات (دائماً ظاهرة الآن)
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("🔥 الأكثر طلباً الآن")
+    pop_leagues = get_popular_leagues()
+    if pop_leagues:
+        for league, count in pop_leagues.items():
+            st.sidebar.markdown(f"<div><span class='popular-tag'>{count}</span> {league}</div>", unsafe_allow_html=True)
+    else:
+        st.sidebar.write("جاري جمع البيانات...")
 except: st.error("خطأ في البيانات"); st.stop()
 
 # --- 8. العرض الرئيسي ---
@@ -140,15 +144,16 @@ if not df.empty:
         st.markdown(f'<div class="match-card"><div>🕒 <small>{r["التوقيت"]}</small><br><b>{r["المضيف"]} vs {r["الضيف"]}</b></div><div>{r["1"]} | {r["X"]} | {r["2"]}</div></div>', unsafe_allow_html=True)
 
     st.markdown("---")
-    st.header("🔬 المختبر الإحصائي الذكي")
-    sel_m = st.selectbox("🎯 اختر مباراة للتحليل الفني:", [f"{r['المضيف']} ضد {r['الضيف']}" for _, r in df.iterrows()])
+    st.header("🔬 المختبر الإحصائي")
+    sel_m = st.selectbox("🎯 اختر مباراة للتحليل:", [f"{r['المضيف']} ضد {r['الضيف']}" for _, r in df.iterrows()])
     row = df[df['المضيف'] == sel_m.split(" ضد ")[0]].iloc[0]
 
-    # تحديث الإحصائيات ورصد الدوري
+    # تحديث الإحصائيات عند التحليل
     if 'last_analyzed' not in st.session_state or st.session_state['last_analyzed'] != sel_m:
         update_stat("deep_analysis")
-        track_league(sel_l_name) # تسجيل اسم الدوري
+        track_league(sel_l_name) 
         st.session_state['last_analyzed'] = sel_m
+        st.rerun() # تحديث الصفحة فوراً لإظهار التغيير في اللوحة
 
     # الحسابات
     h_p, a_p, d_p = (1/row['1']), (1/row['2']), (1/row['X'])
@@ -158,20 +163,18 @@ if not df.empty:
     score = predict_exact_score(p1, px, p2, xg)
     tight = 1 - abs((p1/100) - (p2/100))
 
-    st.markdown(f'<div class="score-banner"><small>النتيجة المتوقعة بناءً على الخوارزمية</small><br><span style="font-size:3.5rem;">{score}</span></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="score-banner"><small>النتيجة المتوقعة</small><br><span style="font-size:3.5rem;">{score}</span></div>', unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("📊 احتمالات الفوز")
         st.bar_chart(pd.DataFrame({'%': [p1, px, p2]}, index=[row['المضيف'], 'تعادل', row['الضيف']]))
-        st.success(f"💰 الرهان المقترح: **{(budget * 0.05):.1f}$**")
     with col2:
         st.subheader("📝 رادار المباراة")
-        st.markdown(f'<div class="stat-box">🥅 الأهداف المتوقعة (xG): {xg}</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="stat-box" style="border-right-color:#fbbf24;">🟨 البطاقات الصفراء: {round(2.5+tight*3,1)}</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="stat-box" style="border-right-color:#ef4444;">🟥 احتمالية الطرد: {int(tight*35)}%</div>', unsafe_allow_html=True)
-        st.info(f"🎯 مؤشر ثقة التوقع: {int(max(p1,p2,px)+12)}%")
+        st.markdown(f'<div class="stat-box">🥅 الأهداف (xG): {xg}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="stat-box" style="border-right-color:gold;">🟨 البطاقات: {round(2.5+tight*3,1)}</div>', unsafe_allow_html=True)
+        st.info(f"🎯 مؤشر الثقة: {int(max(p1,p2,px)+12)}%")
 else:
-    st.info("جاري جلب البيانات من السيرفر...")
+    st.info("لا توجد مباريات جارية.")
 
 if __name__ == '__main__': pass
