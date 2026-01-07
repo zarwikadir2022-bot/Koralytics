@@ -5,14 +5,18 @@ import os
 import numpy as np
 from scipy.stats import poisson
 
-# --- 1. إعدادات الصفحة والتصميم الكريستالي ---
-st.set_page_config(page_title="Koralytics AI | النسخة البلاتينية", page_icon="💎", layout="wide")
+# --- 1. إعدادات الصفحة والتصميم الكريستالي المطور ---
+st.set_page_config(page_title="Koralytics AI | Platinum", page_icon="💎", layout="wide")
 
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
     * { font-family: 'Cairo', sans-serif; direction: rtl; }
     .stApp { background: radial-gradient(circle at top right, #e0e0e0, #bdbdbd, #9e9e9e); background-attachment: fixed; }
+    
+    /* توسيع حاوية الجدول لضمان الظهور الكامل */
+    .stDataFrame { width: 100%; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    
     .crystal-card { background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(12px); border-radius: 20px; padding: 25px; border: 1px solid rgba(255, 255, 255, 0.8); box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.1); margin-bottom: 20px; }
     .ai-box { background: linear-gradient(145deg, #ffffff, #e6e6e6); border-right: 6px solid #424242; padding: 20px; border-radius: 12px; margin-bottom: 15px; }
     .visitor-badge { text-align:center; padding:10px; background: #e0e0e0; border-radius: 15px; box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff; margin-bottom: 20px; }
@@ -37,29 +41,20 @@ def get_unique_visitors():
 try: API_KEY = st.secrets["ODDS_API_KEY"]
 except: API_KEY = "YOUR_KEY"
 
-# --- 3. محرك الحسابات الإحصائية (تم التأكد من استعادة كل القيم) ---
+# --- 3. محرك الحسابات الإحصائية ---
 def calculate_all_stats(row):
     try:
-        # 1. احتمالات الفوز (1X2)
         h_odd, a_odd, d_odd = row['1'], row['2'], row['X']
         h_p, a_p, d_p = (1/h_odd), (1/a_odd), (1/d_odd)
         total = h_p + a_p + d_p
-        
-        # 2. رادار البطاقات والخشونة
         tightness = 1 - abs((h_p/total) - (a_p/total))
         h_cards = round(1.2 + (tightness * 1.5), 1)
         a_cards = round(1.4 + (tightness * 1.5), 1)
         red_p = int((tightness * 25) + 5)
-        
-        # 3. الأهداف المتوقعة (xG)
         o_25, u_25 = row['أكثر 2.5'], row['أقل 2.5']
         prob_u = (1/u_25) / ((1/o_25) + (1/u_25))
         xg = 1.9 if prob_u > 0.55 else 3.5 if prob_u < 0.30 else 2.7
-        
-        return {
-            "p1": (h_p/total)*100, "px": (d_p/total)*100, "p2": (a_p/total)*100,
-            "hc": h_cards, "ac": a_cards, "rp": red_p, "xg": xg
-        }
+        return {"p1": (h_p/total)*100, "px": (d_p/total)*100, "p2": (a_p/total)*100, "hc": h_cards, "ac": a_cards, "rp": red_p, "xg": xg}
     except: return None
 
 # --- 4. جلب ومعالجة البيانات ---
@@ -88,7 +83,6 @@ def main():
     visitors = get_unique_visitors()
     st.sidebar.markdown(f'<div class="visitor-badge">إجمالي الزوار الفريدين<br><b>👤 {visitors}</b></div>', unsafe_allow_html=True)
     
-    # قائمة الدوريات
     try:
         leagues_raw = requests.get(f'https://api.the-odds-api.com/v4/sports/?apiKey={API_KEY}').json()
         grps = sorted(list(set([s['group'] for s in leagues_raw])))
@@ -99,11 +93,18 @@ def main():
         budget = st.sidebar.number_input("💵 المحفظة ($):", 10.0, 5000.0, 500.0)
     except: st.error("تأكد من الـ API KEY"); return
 
-    st.title(f"💎 Koralytics AI: {sel_l}")
+    st.title(f"⚽ {sel_l}")
     df = fetch_data(l_map[sel_l])
     
     if not df.empty:
-        st.dataframe(df[["المضيف", "الضيف", "1", "X", "2"]], use_container_width=True, hide_index=True)
+        # عرض الجدول مع تحسين التنسيق لضمان ظهور كامل الأعمدة
+        st.subheader("📅 جدول المباريات المتاحة")
+        st.dataframe(
+            df[["المضيف", "الضيف", "1", "X", "2"]], 
+            use_container_width=True, 
+            hide_index=True
+        )
+        
         st.markdown("---")
         
         st.markdown("<div class='crystal-card'>", unsafe_allow_html=True)
@@ -123,7 +124,7 @@ def main():
                 st.info(f"💡 المستشار: ينصح بمبلغ {(budget * (stats['p1']/100) * 0.05):.1f}$ لهذه العملية.")
 
             with c2:
-                st.subheader("📊 ذكاء المباراة (إحصائيات كاملة)")
+                st.subheader("📊 ذكاء المباراة")
                 st.markdown(f"""<div class='ai-box'>
                     <b>احتمالات الفوز:</b> {row['المضيف']} ({stats['p1']:.1f}%) | تعادل ({stats['px']:.1f}%) | {row['الضيف']} ({stats['p2']:.1f}%) <br>
                     <b>رادار البطاقات:</b> 🟨 للأرض {stats['hc']} | 🟨 للضيف {stats['ac']} | 🟥 طرد {stats['rp']}% <br>
