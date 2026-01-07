@@ -64,6 +64,8 @@ if 'v' not in st.session_state:
 
 st.markdown(f"""
 <div class="ticker-wrap"><div class="ticker">
+    <span style="padding:0 30px;">🔥 للتواصل +21694928912  Koralytics AI</span>
+    <span style="padding:0 30px;">🔥 تطوير عبد القادر ساسي محلل بيانات محترف Koralytics AI</span>
     <span style="padding:0 30px;">🔥 مرحباً بزوارنا الكرام  في Koralytics AI</span>
     <span style="padding:0 30px;">🎯 إجمالي التحليلات المنجزة: {get_stat('deep_analysis')}</span>
     <span style="padding:0 30px;">👤 عدد الزوار الكلي: {get_stat('unique_visitors')}</span>
