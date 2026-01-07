@@ -14,7 +14,7 @@ st.markdown("""
     * { font-family: 'Cairo', sans-serif; direction: rtl; }
     .stApp { background: radial-gradient(circle at top right, #e0e0e0, #bdbdbd, #9e9e9e); background-attachment: fixed; }
     
-    /* تصميم بطاقات المباريات بدلاً من الجدول */
+    /* تصميم بطاقات المباريات الأنيق */
     .match-card {
         background: rgba(255, 255, 255, 0.45);
         backdrop-filter: blur(10px);
@@ -37,6 +37,7 @@ st.markdown("""
         margin-left: 5px;
     }
     .crystal-card { background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(12px); border-radius: 20px; padding: 25px; border: 1px solid rgba(255, 255, 255, 0.8); box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.1); margin-top: 20px; }
+    .ai-box { background: white; padding: 15px; border-radius: 12px; border-right: 6px solid #424242; box-shadow: inset 0 0 5px rgba(0,0,0,0.05); }
 </style>
 """, unsafe_allow_html=True)
 
@@ -68,7 +69,10 @@ def calculate_all_stats(row):
         red_p = int((tightness * 22) + 8)
         prob_u = (1/row['أقل 2.5']) / ((1/row['أكثر 2.5']) + (1/row['أقل 2.5']))
         xg = 1.9 if prob_u > 0.55 else 3.4 if prob_u < 0.30 else 2.6
-        return {"p1": (h_p/total)*100, "px": (d_p/total)*100, "p2": (a_p/total)*100, "hc": h_cards, "ac": a_cards, "rp": red_p, "xg": xg}
+        return {
+            "p1": (h_p/total)*100, "px": (d_p/total)*100, "p2": (a_p/total)*100,
+            "hc": h_cards, "ac": a_cards, "rp": red_p, "xg": xg
+        }
     except: return None
 
 @st.cache_data(ttl=3600)
@@ -96,7 +100,7 @@ def fetch_odds(l_key):
 # --- 3. التطبيق الرئيسي ---
 def main():
     visitors = get_unique_visitors()
-    st.sidebar.markdown(f'<div style="text-align:center; padding:10px; background:#e0e0e0; border-radius:15px;">الزوار الفريدون 👤 <b>{visitors}</b></div>', unsafe_allow_html=True)
+    st.sidebar.markdown(f'<div style="text-align:center; padding:10px; background:#e0e0e0; border-radius:15px; box-shadow: 2px 2px 5px rgba(0,0,0,0.1);">الزوار الفريدون 👤 <b>{visitors}</b></div>', unsafe_allow_html=True)
     
     try:
         leagues_raw = requests.get(f'https://api.the-odds-api.com/v4/sports/?apiKey={API_KEY}').json()
@@ -105,20 +109,18 @@ def main():
         sel_grp = st.sidebar.selectbox("🏅 الرياضة", grps)
         l_map = {s['title']: s['key'] for s in leagues_raw if s['group'] == sel_grp}
         sel_l = st.sidebar.selectbox("🏆 البطولة", list(l_map.keys()))
-    except: st.error("خطأ في الاتصال"); return
+    except: st.error("خطأ في الاتصال بالبيانات"); return
 
-    st.title(f"💎 {sel_l}")
+    st.title(f"💎 تحليل كريستال: {sel_l}")
     df = fetch_odds(l_map[sel_l])
     
     if not df.empty:
-        st.subheader("⚽ المباريات القادمة (نظرة سريعة)")
-        
-        # عرض المباريات بنظام البطاقات الأنيق بدلاً من الجدول
+        st.subheader("⚽ قائمة المباريات القادمة")
         for _, r in df.iterrows():
             st.markdown(f"""
             <div class="match-card">
-                <div style="flex: 2; font-weight: bold;">{r['المضيف']} <span style="color:#7f8c8d;">vs</span> {r['الضيف']}</div>
-                <div style="flex: 1; text-align: left;">
+                <div style="flex: 2; font-weight: bold;">{r['المضيف']} <span style="color:#7f8c8d;">ضد</span> {r['الضيف']}</div>
+                <div style="flex: 1; text-align: left; display: flex; justify-content: flex-end;">
                     <span class="odd-badge">1: {r['1']}</span>
                     <span class="odd-badge">X: {r['X']}</span>
                     <span class="odd-badge">2: {r['2']}</span>
@@ -133,6 +135,11 @@ def main():
         
         stats = calculate_all_stats(row)
         if stats:
+            # تعريف المتغيرات قبل الاستخدام في f-string
+            prob_home = stats['p1']
+            prob_draw = stats['px']
+            prob_away = stats['p2']
+            
             col1, col2 = st.columns([1, 1.5])
             with col1:
                 st.subheader("💰 استثمار")
@@ -142,12 +149,16 @@ def main():
                 st.metric("الربح المتوقع", f"{(stake*v_odd):.2f}$")
             with col2:
                 st.subheader("📊 ذكاء المباراة")
-                st.markdown(f"""<div style="background:white; padding:15px; border-radius:12px; border-right:5px solid #424242;">
-                    <b>احتمالات الفوز:</b> {p1 := stats['p1']:.1f}% | تعادل {stats['px']:.1f}% | {p2 := stats['p2']:.1f}% <br>
-                    <b>البطاقات:</b> 🟨 للأرض {stats['hc']} | 🟨 للضيف {stats['ac']} | 🟥 طرد {stats['rp']}% <br>
-                    <b>معدل الأهداف:</b> {stats['xg']:.2f} (xG)
+                st.markdown(f"""<div class="ai-box">
+                    <b>احتمالات الفوز:</b> {row['المضيف']} ({prob_home:.1f}%) | تعادل ({prob_draw:.1f}%) | {row['الضيف']} ({prob_away:.1f}%) <br>
+                    <b>البطاقات المتوقعة:</b> 🟨 للأرض {stats['hc']} | 🟨 للضيف {stats['ac']} | 🟥 طرد {stats['rp']}% <br>
+                    <b>معدل الأهداف (xG):</b> {stats['xg']:.2f}
                 </div>""", unsafe_allow_html=True)
-                st.bar_chart(pd.DataFrame({'%': [p1, stats['px'], p2]}, index=[row['المضيف'], 'تعادل', row['الضيف']]), color="#424242")
+                
+                chart_data = pd.DataFrame({'النسبة %': [prob_home, prob_draw, prob_away]}, 
+                                          index=[row['المضيف'], 'تعادل', row['الضيف']])
+                st.bar_chart(chart_data, color="#424242")
         st.markdown("</div>", unsafe_allow_html=True)
 
-if __name__ == '__main__': main()
+if __name__ == '__main__':
+    main()
