@@ -5,7 +5,7 @@ import os
 import numpy as np
 from scipy.stats import poisson
 
-# --- 1. إعدادات الصفحة والتصميم الكريستالي المطور ---
+# --- 1. إعدادات الصفحة والتصميم ---
 st.set_page_config(page_title="Koralytics AI | Platinum", page_icon="💎", layout="wide")
 
 st.markdown("""
@@ -13,13 +13,8 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
     * { font-family: 'Cairo', sans-serif; direction: rtl; }
     .stApp { background: radial-gradient(circle at top right, #e0e0e0, #bdbdbd, #9e9e9e); background-attachment: fixed; }
-    
-    /* توسيع حاوية الجدول لضمان الظهور الكامل */
-    .stDataFrame { width: 100%; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-    
     .crystal-card { background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(12px); border-radius: 20px; padding: 25px; border: 1px solid rgba(255, 255, 255, 0.8); box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.1); margin-bottom: 20px; }
     .ai-box { background: linear-gradient(145deg, #ffffff, #e6e6e6); border-right: 6px solid #424242; padding: 20px; border-radius: 12px; margin-bottom: 15px; }
-    .visitor-badge { text-align:center; padding:10px; background: #e0e0e0; border-radius: 15px; box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff; margin-bottom: 20px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -41,7 +36,7 @@ def get_unique_visitors():
 try: API_KEY = st.secrets["ODDS_API_KEY"]
 except: API_KEY = "YOUR_KEY"
 
-# --- 3. محرك الحسابات الإحصائية ---
+# --- 3. محرك الحسابات ---
 def calculate_all_stats(row):
     try:
         h_odd, a_odd, d_odd = row['1'], row['2'], row['X']
@@ -81,7 +76,7 @@ def fetch_data(l_key):
 # --- 5. واجهة التطبيق الرئيسية ---
 def main():
     visitors = get_unique_visitors()
-    st.sidebar.markdown(f'<div class="visitor-badge">إجمالي الزوار الفريدين<br><b>👤 {visitors}</b></div>', unsafe_allow_html=True)
+    st.sidebar.markdown(f'<div style="text-align:center; padding:10px; background:#e0e0e0; border-radius:15px; box-shadow:4px 4px 8px #bebebe;">الزوار الفريدون<br><b>👤 {visitors}</b></div>', unsafe_allow_html=True)
     
     try:
         leagues_raw = requests.get(f'https://api.the-odds-api.com/v4/sports/?apiKey={API_KEY}').json()
@@ -90,50 +85,49 @@ def main():
         sel_grp = st.sidebar.selectbox("🏅 الرياضة", grps)
         l_map = {s['title']: s['key'] for s in leagues_raw if s['group'] == sel_grp}
         sel_l = st.sidebar.selectbox("🏆 البطولة", list(l_map.keys()))
-        budget = st.sidebar.number_input("💵 المحفظة ($):", 10.0, 5000.0, 500.0)
     except: st.error("تأكد من الـ API KEY"); return
 
-    st.title(f"⚽ {sel_l}")
+    st.title(f"💎 {sel_l}")
     df = fetch_data(l_map[sel_l])
     
     if not df.empty:
-        # عرض الجدول مع تحسين التنسيق لضمان ظهور كامل الأعمدة
-        st.subheader("📅 جدول المباريات المتاحة")
+        st.subheader("📅 جدول المباريات")
+        
+        # --- الحل الجذري: إعدادات الأعمدة اليدوية ---
         st.dataframe(
             df[["المضيف", "الضيف", "1", "X", "2"]], 
             use_container_width=True, 
-            hide_index=True
+            hide_index=True,
+            column_config={
+                "المضيف": st.column_config.TextColumn("🏠 الفريق المضيف", width="large"),
+                "الضيف": st.column_config.TextColumn("✈️ الفريق الضيف", width="large"),
+                "1": st.column_config.NumberColumn("1", width="small", format="%.2f"),
+                "X": st.column_config.NumberColumn("X", width="small", format="%.2f"),
+                "2": st.column_config.NumberColumn("2", width="small", format="%.2f"),
+            }
         )
         
         st.markdown("---")
-        
         st.markdown("<div class='crystal-card'>", unsafe_allow_html=True)
-        sel_m = st.selectbox("🎯 اختر مباراة للتحليل الإحصائي الكامل:", [f"{r['المضيف']} ضد {r['الضيف']}" for _, r in df.iterrows()])
+        sel_m = st.selectbox("🎯 اختر مباراة للتحليل الإحصائي:", [f"{r['المضيف']} ضد {r['الضيف']}" for _, r in df.iterrows()])
         row = df[df['المضيف'] == sel_m.split(" ضد ")[0]].iloc[0]
         
         stats = calculate_all_stats(row)
-        
         if stats:
             c1, c2 = st.columns([1, 1.5])
             with c1:
-                st.subheader("💰 استثمار ومستشار")
-                stake = st.number_input("مبلغ الرهان ($):", 1.0, 1000.0, 10.0)
+                st.subheader("💰 استثمار")
+                stake = st.number_input("الرهان ($):", 1.0, 1000.0, 10.0)
                 sel_opt = st.selectbox("توقعك:", [row['المضيف'], "تعادل", row['الضيف']])
                 v_odd = row['1'] if sel_opt==row['المضيف'] else row['X'] if sel_opt=="تعادل" else row['2']
                 st.markdown(f"<div style='background:#f5f5f5; padding:10px; border-radius:10px; text-align:center;'>العائد: <b>{(stake*v_odd):.2f}$</b></div>", unsafe_allow_html=True)
-                st.info(f"💡 المستشار: ينصح بمبلغ {(budget * (stats['p1']/100) * 0.05):.1f}$ لهذه العملية.")
-
             with c2:
                 st.subheader("📊 ذكاء المباراة")
                 st.markdown(f"""<div class='ai-box'>
                     <b>احتمالات الفوز:</b> {row['المضيف']} ({stats['p1']:.1f}%) | تعادل ({stats['px']:.1f}%) | {row['الضيف']} ({stats['p2']:.1f}%) <br>
                     <b>رادار البطاقات:</b> 🟨 للأرض {stats['hc']} | 🟨 للضيف {stats['ac']} | 🟥 طرد {stats['rp']}% <br>
-                    <b>معدل الأهداف المتوقع (xG):</b> {stats['xg']:.2f}
+                    <b>معدل الأهداف (xG):</b> {stats['xg']:.2f}
                 </div>""", unsafe_allow_html=True)
-                
-                t1, t2 = st.tabs(["📈 قوة الفريقين", "🟨 رادار الخشونة"])
-                with t1: st.bar_chart(pd.DataFrame({'%': [stats['p1'], stats['px'], stats['p2']]}, index=[row['المضيف'], 'تعادل', row['الضيف']]), color="#424242")
-                with t2: st.bar_chart(pd.DataFrame({'🟨': [stats['hc'], stats['ac']]}, index=[row['المضيف'], row['الضيف']]), color="#f1c40f")
         st.markdown("</div>", unsafe_allow_html=True)
 
 if __name__ == '__main__': main()
