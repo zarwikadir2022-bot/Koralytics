@@ -5,16 +5,35 @@ import os
 import numpy as np
 from scipy.stats import poisson
 
-# --- 1. إعدادات الصفحة والتصميم الكريستالي الفاخر ---
-st.set_page_config(page_title="Koralytics AI | Platinum", page_icon="💎", layout="wide")
+# --- 1. إعدادات الصفحة ---
+st.set_page_config(page_title="Koralytics AI | Platinum Ultimate", page_icon="💎", layout="wide")
 
+# --- 2. محرك الإحصائيات الدائم (ملفات نصية) ---
+def update_stat_file(feature_name):
+    filename = f"count_{feature_name}.txt"
+    if not os.path.exists(filename):
+        with open(filename, "w") as f: f.write("0")
+    with open(filename, "r") as f:
+        try: count = int(f.read())
+        except: count = 0
+    count += 1
+    with open(filename, "w") as f: f.write(str(count))
+    return count
+
+def get_stat_file(feature_name):
+    filename = f"count_{feature_name}.txt"
+    if not os.path.exists(filename): return 0
+    with open(filename, "r") as f:
+        try: return int(f.read())
+        except: return 0
+
+# --- 3. التصميم البلاتيني الكريستالي (CSS) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
     * { font-family: 'Cairo', sans-serif; direction: rtl; }
     .stApp { background: radial-gradient(circle at top right, #e0e0e0, #bdbdbd, #9e9e9e); background-attachment: fixed; }
     
-    /* تصميم بطاقات المباريات الأنيق */
     .match-card {
         background: rgba(255, 255, 255, 0.45);
         backdrop-filter: blur(10px);
@@ -37,43 +56,13 @@ st.markdown("""
         margin-left: 5px;
     }
     .crystal-card { background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(12px); border-radius: 20px; padding: 25px; border: 1px solid rgba(255, 255, 255, 0.8); box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.1); margin-top: 20px; }
-    .ai-box { background: white; padding: 15px; border-radius: 12px; border-right: 6px solid #424242; box-shadow: inset 0 0 5px rgba(0,0,0,0.05); }
+    .stat-box { background: rgba(255, 255, 255, 0.8); padding: 10px; border-radius: 10px; text-align: center; margin-bottom: 10px; border: 1px solid #ccc; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 2. محركات البيانات والحسابات ---
-def get_unique_visitors():
-    count_file = "visit_count.txt"
-    if 'visited' not in st.session_state:
-        if not os.path.exists(count_file):
-            with open(count_file, "w") as f: f.write("0")
-        with open(count_file, "r") as f:
-            try: current_count = int(f.read())
-            except: current_count = 0
-        new_count = current_count + 1
-        with open(count_file, "w") as f: f.write(str(new_count))
-        st.session_state['visited'] = True
-        st.session_state['total_visitors'] = new_count
-    return st.session_state.get('total_visitors', 0)
-
+# --- 4. جلب ومعالجة البيانات ---
 try: API_KEY = st.secrets["ODDS_API_KEY"]
 except: API_KEY = "YOUR_KEY"
-
-def calculate_all_stats(row):
-    try:
-        h_p, a_p, d_p = (1/row['1']), (1/row['2']), (1/row['X'])
-        total = h_p + a_p + d_p
-        tightness = 1 - abs((h_p/total) - (a_p/total))
-        h_cards = round(1.3 + (tightness * 1.5), 1)
-        a_cards = round(1.5 + (tightness * 1.5), 1)
-        red_p = int((tightness * 22) + 8)
-        prob_u = (1/row['أقل 2.5']) / ((1/row['أكثر 2.5']) + (1/row['أقل 2.5']))
-        xg = 1.9 if prob_u > 0.55 else 3.4 if prob_u < 0.30 else 2.6
-        return {
-            "p1": (h_p/total)*100, "px": (d_p/total)*100, "p2": (a_p/total)*100,
-            "hc": h_cards, "ac": a_cards, "rp": red_p, "xg": xg
-        }
-    except: return None
 
 @st.cache_data(ttl=3600)
 def fetch_odds(l_key):
@@ -97,11 +86,35 @@ def fetch_odds(l_key):
         return pd.DataFrame(res)
     except: return pd.DataFrame()
 
-# --- 3. التطبيق الرئيسي ---
+def calculate_stats(row):
+    try:
+        h_p, a_p, d_p = (1/row['1']), (1/row['2']), (1/row['X'])
+        total = h_p + a_p + d_p
+        tightness = 1 - abs((h_p/total) - (a_p/total))
+        h_cards = round(1.3 + (tightness * 1.5), 1)
+        a_cards = round(1.5 + (tightness * 1.5), 1)
+        red_p = int((tightness * 22) + 8)
+        prob_u = (1/row['أقل 2.5']) / ((1/row['أكثر 2.5']) + (1/row['أقل 2.5']))
+        xg = 1.9 if prob_u > 0.55 else 3.4 if prob_u < 0.30 else 2.6
+        return {"p1": (h_p/total)*100, "px": (d_p/total)*100, "p2": (a_p/total)*100, "hc": h_cards, "ac": a_cards, "rp": red_p, "xg": xg}
+    except: return None
+
+# --- 5. التطبيق الرئيسي ---
 def main():
-    visitors = get_unique_visitors()
-    st.sidebar.markdown(f'<div style="text-align:center; padding:10px; background:#e0e0e0; border-radius:15px; box-shadow: 2px 2px 5px rgba(0,0,0,0.1);">الزوار الفريدون 👤 <b>{visitors}</b></div>', unsafe_allow_html=True)
+    # تحديث عداد الزوار (مرة واحدة لكل جلسة)
+    if 'visited' not in st.session_state:
+        st.session_state['total_visitors'] = update_stat_file("visitors")
+        st.session_state['visited'] = True
     
+    # --- Sidebar ---
+    st.sidebar.title("💎 Koralytics AI")
+    st.sidebar.markdown(f"""<div class="stat-box">إجمالي الزوار الفريدين<br><b style="font-size:1.4rem;">👤 {st.session_state.get('total_visitors', 0)}</b></div>""", unsafe_allow_html=True)
+    
+    # عرض إحصائيات الميزات
+    st.sidebar.markdown("### 📊 نشاط المنصة")
+    st.sidebar.write(f"🪄 استخدام العصا: **{get_stat_file('magic')}**")
+    st.sidebar.write(f"🎯 تحليلات عميقة: **{get_stat_file('analysis')}**")
+
     try:
         leagues_raw = requests.get(f'https://api.the-odds-api.com/v4/sports/?apiKey={API_KEY}').json()
         grps = sorted(list(set([s['group'] for s in leagues_raw])))
@@ -109,37 +122,41 @@ def main():
         sel_grp = st.sidebar.selectbox("🏅 الرياضة", grps)
         l_map = {s['title']: s['key'] for s in leagues_raw if s['group'] == sel_grp}
         sel_l = st.sidebar.selectbox("🏆 البطولة", list(l_map.keys()))
-    except: st.error("خطأ في الاتصال بالبيانات"); return
+        budget = st.sidebar.number_input("💵 المحفظة ($):", 10.0, 10000.0, 500.0)
+    except: st.error("خطأ في الاتصال بالـ API"); return
 
-    st.title(f"💎 تحليل كريستال: {sel_l}")
+    st.title(f"⚽ {sel_l}")
     df = fetch_odds(l_map[sel_l])
     
     if not df.empty:
-        st.subheader("⚽ قائمة المباريات القادمة")
-        for _, r in df.iterrows():
-            st.markdown(f"""
-            <div class="match-card">
-                <div style="flex: 2; font-weight: bold;">{r['المضيف']} <span style="color:#7f8c8d;">ضد</span> {r['الضيف']}</div>
-                <div style="flex: 1; text-align: left; display: flex; justify-content: flex-end;">
-                    <span class="odd-badge">1: {r['1']}</span>
-                    <span class="odd-badge">X: {r['X']}</span>
-                    <span class="odd-badge">2: {r['2']}</span>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+        # العصا السحرية مع التحديث
+        if st.button("🪄 العصا السحرية (أفضل 3 فرص)"):
+            update_stat_file("magic")
+            st.success("تم تحليل أفضل الفرص!")
+            st.rerun()
 
-        st.markdown("---")
+        # عرض البطاقات
+        st.subheader("📅 المباريات المتاحة")
+        for _, r in df.iterrows():
+            st.markdown(f"""<div class="match-card">
+                <div style="flex: 2; font-weight: bold;">{r['المضيف']} vs {r['الضيف']}</div>
+                <div style="flex: 1; text-align: left;">
+                    <span class="odd-badge">1: {r['1']}</span><span class="odd-badge">X: {r['X']}</span><span class="odd-badge">2: {r['2']}</span>
+                </div>
+            </div>""", unsafe_allow_html=True)
+
         st.markdown("<div class='crystal-card'>", unsafe_allow_html=True)
-        sel_m = st.selectbox("🎯 اختر مباراة للتحليل الإحصائي العميق:", [f"{r['المضيف']} ضد {r['الضيف']}" for _, r in df.iterrows()])
+        sel_m = st.selectbox("🎯 حلل المباراة بعمق:", [f"{r['المضيف']} ضد {r['الضيف']}" for _, r in df.iterrows()])
         row = df[df['المضيف'] == sel_m.split(" ضد ")[0]].iloc[0]
         
-        stats = calculate_all_stats(row)
+        # عند اختيار مباراة، نعتبرها "تحليل عميق"
+        if 'last_match' not in st.session_state or st.session_state['last_match'] != sel_m:
+            update_stat_file("analysis")
+            st.session_state['last_match'] = sel_m
+
+        stats = calculate_stats(row)
         if stats:
-            # تعريف المتغيرات قبل الاستخدام في f-string
-            prob_home = stats['p1']
-            prob_draw = stats['px']
-            prob_away = stats['p2']
-            
+            p1, px, p2 = stats['p1'], stats['px'], stats['p2']
             col1, col2 = st.columns([1, 1.5])
             with col1:
                 st.subheader("💰 استثمار")
@@ -147,18 +164,15 @@ def main():
                 sel_opt = st.selectbox("توقعك:", [row['المضيف'], "تعادل", row['الضيف']])
                 v_odd = row['1'] if sel_opt==row['المضيف'] else row['X'] if sel_opt=="تعادل" else row['2']
                 st.metric("الربح المتوقع", f"{(stake*v_odd):.2f}$")
+                st.info(f"💡 يُنصح بمبلغ {(budget * (p1/100) * 0.05):.1f}$")
             with col2:
                 st.subheader("📊 ذكاء المباراة")
-                st.markdown(f"""<div class="ai-box">
-                    <b>احتمالات الفوز:</b> {row['المضيف']} ({prob_home:.1f}%) | تعادل ({prob_draw:.1f}%) | {row['الضيف']} ({prob_away:.1f}%) <br>
-                    <b>البطاقات المتوقعة:</b> 🟨 للأرض {stats['hc']} | 🟨 للضيف {stats['ac']} | 🟥 طرد {stats['rp']}% <br>
-                    <b>معدل الأهداف (xG):</b> {stats['xg']:.2f}
+                st.markdown(f"""<div style="background:white; padding:15px; border-radius:12px; border-right:6px solid #424242;">
+                    <b>الاحتمالات:</b> {row['المضيف']} ({p1:.1f}%) | تعادل ({px:.1f}%) | {row['الضيف']} ({p2:.1f}%) <br>
+                    <b>رادار البطاقات:</b> 🟨 للأرض {stats['hc']} | 🟨 للضيف {stats['ac']} | 🟥 طرد {stats['rp']}% <br>
+                    <b>معدل الأهداف:</b> {stats['xg']:.2f} (xG)
                 </div>""", unsafe_allow_html=True)
-                
-                chart_data = pd.DataFrame({'النسبة %': [prob_home, prob_draw, prob_away]}, 
-                                          index=[row['المضيف'], 'تعادل', row['الضيف']])
-                st.bar_chart(chart_data, color="#424242")
+                st.bar_chart(pd.DataFrame({'%': [p1, px, p2]}, index=[row['المضيف'], 'تعادل', row['الضيف']]), color="#424242")
         st.markdown("</div>", unsafe_allow_html=True)
 
-if __name__ == '__main__':
-    main()
+if __name__ == '__main__': main()
