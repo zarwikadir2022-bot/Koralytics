@@ -81,7 +81,8 @@ if 'v' not in st.session_state:
 
 st.markdown(f"""
 <div class="ticker-wrap"><div class="ticker">
-    <span style="padding:0 30px;">🚀 مرحباً بزوار تونيزيا سات | إجمالي الزوار: {get_stat('unique_visitors')}</span>
+    <span style="padding:0 30px;">⚽ Koralytics AI: في خدمتكم للتواصل و الاستفسار 94928912</span>
+    <span style="padding:0 30px;">🚀 مرحباً بزوارنا الكرام | إجمالي الزوار: {get_stat('unique_visitors')}</span>
     <span style="padding:0 30px;">🎯 إجمالي التحليلات المنجزة: {get_stat('deep_analysis')}</span>
     <span style="padding:0 30px;">⚽ Koralytics AI: رادارك الذكي لتوقع النتائج والبطاقات</span>
 </div></div>
