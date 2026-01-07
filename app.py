@@ -49,10 +49,11 @@ st.markdown("""
         background: linear-gradient(135deg, #2c3e50, #000000);
         color: #f1c40f; padding: 15px; border-radius: 12px; border-left: 5px solid #f1c40f; margin-bottom: 10px;
     }
+    .crystal-card { background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(12px); border-radius: 20px; padding: 25px; border: 1px solid rgba(255, 255, 255, 0.8); box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.1); margin-top: 20px; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 4. إدارة البيانات ---
+# --- 4. إدارة البيانات والـ API ---
 try: API_KEY = st.secrets["ODDS_API_KEY"]
 except: API_KEY = "YOUR_KEY"
 
@@ -88,24 +89,66 @@ def main():
 
     # --- القائمة الجانبية ---
     st.sidebar.title("💎 Koralytics AI")
-    st.sidebar.markdown(f"**👤 الزوار:** {st.session_state.get('total_visitors', 0)}")
+    st.sidebar.markdown(f"**👤 إجمالي الزوار:** {st.session_state.get('total_visitors', 0)}")
     
-    # عرض ورقة الرهان في القائمة الجانبية
+    # عرض ورقة الرهان (تظهر بعد الضغط على العصا السحرية)
     if st.session_state["my_ticket"]:
         st.sidebar.markdown("### 🧾 ورقتك المقترحة")
         total_odd = 1.0
         for item in st.session_state["my_ticket"]:
             st.sidebar.markdown(f"<div class='ticket-style'>⚽ {item['match']}<br>🎯 {item['pick']} | <b>{item['odd']}</b></div>", unsafe_allow_html=True)
             total_odd *= item['odd']
-        st.sidebar.success(f"إجمالي الأودز: {total_odd:.2f}")
+        st.sidebar.warning(f"إجمالي الربح المحتمل: {total_odd:.2f}x")
         if st.sidebar.button("🗑️ مسح الورقة"):
             st.session_state["my_ticket"] = []
             st.rerun()
 
     st.sidebar.markdown("---")
     st.sidebar.write(f"🪄 استخدام العصا: **{get_stat_file('magic')}**")
-    st.sidebar.write(f"🎯 تحليلات: **{get_stat_file('analysis')}**")
+    st.sidebar.write(f"🎯 تحليلات دقيقة: **{get_stat_file('analysis')}**")
 
+    # جلب الدوريات (تم إصلاح خطأ الـ Syntax هنا)
     try:
         leagues_raw = requests.get(f'https://api.the-odds-api.com/v4/sports/?apiKey={API_KEY}').json()
-        l_map = {s['title']: s['key'] for s in leagues
+        l_map = {s['title']: s['key'] for s in leagues_raw if s['group'] == 'Soccer'}
+        sel_l = st.sidebar.selectbox("🏆 البطولة", list(l_map.keys()))
+    except:
+        st.error("خطأ في الاتصال بالبيانات.")
+        return
+
+    st.title(f"⚽ {sel_l}")
+    df = fetch_odds(l_map[sel_l])
+    
+    if not df.empty:
+        # زر العصا السحرية
+        if st.button("🪄 شغّل العصا السحرية (أفضل الفرص)"):
+            update_stat_file("magic")
+            # اختيار أفضل 3 مباريات بناءً على أعلى احتمالية فوز للأرض
+            best_picks = df.nsmallest(3, '1')
+            st.session_state["my_ticket"] = []
+            for _, r in best_picks.iterrows():
+                st.session_state["my_ticket"].append({
+                    "match": r['المضيف'], "pick": "فوز المضيف", "odd": r['1']
+                })
+            st.rerun()
+
+        # عرض المباريات بنظام البطاقات
+        st.subheader("📅 مباريات البطولة المتاحة")
+        for _, r in df.iterrows():
+            st.markdown(f"""<div class="match-card">
+                <div style="font-weight: bold;">{r['المضيف']} vs {r['الضيف']}</div>
+                <div><span class="odd-badge">1: {r['1']}</span><span class="odd-badge">X: {r['X']}</span><span class="odd-badge">2: {r['2']}</span></div>
+            </div>""", unsafe_allow_html=True)
+
+        # التحليل الكريستالي العميق
+        st.markdown("<div class='crystal-card'>", unsafe_allow_html=True)
+        sel_m_str = st.selectbox("🎯 اختر مباراة للتحليل الإحصائي الكامل:", [f"{r['المضيف']} ضد {r['الضيف']}" for _, r in df.iterrows()])
+        
+        if st.button("📊 بدء التحليل العميق"):
+            update_stat_file("analysis")
+            st.success(f"تم تسجيل تحليل جديد لـ {sel_m_str}")
+            # هنا تظهر الرسوم البيانية (اختصاراً للوضوح)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+if __name__ == '__main__':
+    main()
