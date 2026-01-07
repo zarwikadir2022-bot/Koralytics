@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import requests
@@ -6,7 +5,7 @@ import os
 from datetime import datetime, timedelta
 
 # --- 1. إعدادات الصفحة ---
-st.set_page_config(page_title="Koralytics AI | Ultimate", page_icon="💎", layout="wide")
+st.set_page_config(page_title="Koralytics AI | Multi-Sport", page_icon="💎", layout="wide")
 
 # --- 2. محرك الإحصائيات ---
 def update_stat(feat):
@@ -43,7 +42,7 @@ def predict_exact_score(p1, px, p2, xg):
         if p2 > 60: return "0 - 3" if xg > 3.0 else "0 - 2"
         return "1 - 2" if xg > 2.2 else "0 - 1"
 
-# --- 4. التصميم (CSS) ---
+# --- 4. التصميم البلاتيني ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
@@ -78,12 +77,15 @@ def fetch_odds_data(l_key):
             mkts = m.get('bookmakers', [{}])[0].get('markets', [])
             h2h = next((i for i in mkts if i['key'] == 'h2h'), None)
             totals = next((i for i in mkts if i['key'] == 'totals'), None)
-            if h2h and totals:
-                res.append({
+            if h2h:
+                entry = {
                     "المضيف": m['home_team'], "الضيف": m['away_team'], "التوقيت": get_tn_time(m['commence_time']),
-                    "1": h2h['outcomes'][0]['price'], "2": h2h['outcomes'][1]['price'], "X": h2h['outcomes'][2]['price'],
-                    "أكثر 2.5": totals['outcomes'][0]['price'], "أقل 2.5": totals['outcomes'][1]['price']
-                })
+                    "1": h2h['outcomes'][0]['price'], "2": h2h['outcomes'][1]['price'],
+                    "X": h2h['outcomes'][2]['price'] if len(h2h['outcomes']) > 2 else 1.0,
+                    "أكثر 2.5": totals['outcomes'][0]['price'] if totals else 1.8,
+                    "أقل 2.5": totals['outcomes'][1]['price'] if totals else 1.8
+                }
+                res.append(entry)
         return pd.DataFrame(res)
     except: return pd.DataFrame()
 
@@ -93,52 +95,58 @@ def main():
         update_stat("unique_visitors")
         st.session_state['v'] = True
 
-    # 1. القائمة الجانبية (الدوريات والميزانية)
     st.sidebar.title("💎 Koralytics AI")
     st.sidebar.markdown(f"👤 الزوار: **{get_stat('unique_visitors')}** | 🎯 التحليلات: **{get_stat('deep_analysis')}**")
     
     try:
+        # جلب قائمة جميع الرياضات المتاحة
         sports_url = f'https://api.the-odds-api.com/v4/sports/?apiKey={API_KEY}'
-        sports_data = requests.get(sports_url).json()
-        l_map = {s['title']: s['key'] for s in sports_data if s['group'] == 'Soccer'}
+        all_sports = requests.get(sports_url).json()
+        
+        # 1. خانة اختيار نوع الرياضة (عادت للعمل)
+        sport_groups = sorted(list(set([s['group'] for s in all_sports])))
+        sel_group = st.sidebar.selectbox("🏀 اختر نوع الرياضة", sport_groups, index=sport_groups.index('Soccer') if 'Soccer' in sport_groups else 0)
+        
+        # 2. خانة اختيار الدوري/البطولة
+        l_map = {s['title']: s['key'] for s in all_sports if s['group'] == sel_group}
         sel_l_name = st.sidebar.selectbox("🏆 اختر البطولة", list(l_map.keys()))
         sel_l_key = l_map[sel_l_name]
+        
         budget = st.sidebar.number_input("💵 ميزانية المحفظة ($):", 10, 5000, 500)
     except: 
-        st.error("خطأ في جلب قائمة الدوريات. تأكد من الـ API Key")
+        st.error("خطأ في جلب البيانات من السيرفر.")
         return
 
-    # 2. عرض جدول المباريات
     st.title(f"🏟️ {sel_l_name}")
     df = fetch_odds_data(sel_l_key)
     
     if not df.empty:
-        st.subheader("📅 مباريات الجولة الحاليّة")
+        # عرض جدول المباريات
+        st.subheader("📅 مباريات الجولة")
         for _, r in df.iterrows():
             st.markdown(f"""
             <div class="match-card">
                 <div>🕒 <small>{r['التوقيت']}</small><br><b>{r['المضيف']} vs {r['الضيف']}</b></div>
                 <div>
                     <span class="odd-badge">1: {r['1']}</span>
-                    <span class="odd-badge">X: {r['X']}</span>
+                    {"<span class='odd-badge'>X: " + str(r['X']) + "</span>" if r['X'] != 1.0 else ""}
                     <span class="odd-badge">2: {r['2']}</span>
                 </div>
             </div>""", unsafe_allow_html=True)
 
         st.markdown("---")
 
-        # 3. قسم التحليل العميق
-        st.header("🔬 المختبر الإحصائي الذكي (تحليل مفصل)")
+        # قسم التحليل العميق
+        st.header("🔬 المختبر الإحصائي")
         match_list = [f"{r['المضيف']} ضد {r['الضيف']}" for _, r in df.iterrows()]
         sel_m = st.selectbox("🎯 اختر مباراة لتحليلها بالذكاء الاصطناعي:", match_list)
-        
         row = df[df['المضيف'] == sel_m.split(" ضد ")[0]].iloc[0]
         
         if 'last_m' not in st.session_state or st.session_state['last_m'] != sel_m:
             update_stat("deep_analysis")
             st.session_state['last_m'] = sel_m
 
-        # الحسابات
+        # حسابات التحليل
         h_p, a_p, d_p = (1/row['1']), (1/row['2']), (1/row['X'])
         total = h_p + a_p + d_p
         p1, px, p2 = (h_p/total)*100, (d_p/total)*100, (a_p/total)*100
@@ -146,29 +154,23 @@ def main():
         score = predict_exact_score(p1, px, p2, xg)
         tight = 1 - abs((p1/100) - (p2/100))
 
-        # البانر الرئيسي للنتيجة
         st.markdown(f"""<div class="score-banner">
-            <span style="font-size:1.2rem; opacity:0.8;">النتيجة الرقمية المتوقعة</span><br>
+            <span style="font-size:1.2rem; opacity:0.8;">النتيجة المتوقعة</span><br>
             <span style="font-size:3.5rem; font-weight:bold;">{score}</span>
         </div>""", unsafe_allow_html=True)
 
         col1, col2 = st.columns([1, 1.2])
         with col1:
-            st.subheader("📊 توزيع الاحتمالات")
-            st.bar_chart(pd.DataFrame({'%': [p1, px, p2]}, index=[row['المضيف'], 'تعادل', row['الضيف']]))
-            st.info(f"💰 المبلغ المقترح للمراهنة: **{(budget * 0.05):.1f}$**")
-        
+            st.subheader("📊 الاحتمالات")
+            st.bar_chart(pd.DataFrame({'%': [p1, px, p2] if sel_group == 'Soccer' else [p1, p2]}, 
+                                      index=[row['المضيف'], 'تعادل', row['الضيف']] if sel_group == 'Soccer' else [row['المضيف'], row['الضيف']]))
         with col2:
-            st.subheader("📝 تفاصيل التحليل الفني")
-            st.markdown(f'<div class="insight-item">🥅 <b>الأهداف المتوقعة (xG):</b> {xg} هدف في المباراة.</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="insight-item">🟨 <b>توقع البطاقات:</b> {round(1.5+tight*2,1)} بطاقة صفراء.</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="insight-item">🟥 <b>احتمالية الطرد:</b> {int(tight*25)}%</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="insight-item">🎯 <b>مؤشر ثقة التوقع:</b> {int(max(p1,p2,px)+12)}%</div>', unsafe_allow_html=True)
-            
-            # سيناريو المباراة
-            if xg > 2.5: st.success("🔥 سيناريو هجومي متوقع مع كثرة الفرص.")
-            else: st.warning("🛡️ سيناريو دفاعي حذر متوقع من الفريقين.")
+            st.subheader("📝 الرؤية الفنية")
+            st.markdown(f'<div class="insight-item">🥅 <b>xG:</b> {xg}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="insight-item">🟨 <b>البطاقات:</b> {round(1.5+tight*2,1)}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="insight-item">🎯 <b>الثقة:</b> {int(max(p1,p2)+12)}%</div>', unsafe_allow_html=True)
+            st.info(f"💰 الرهان: **{(budget * 0.05):.1f}$**")
     else:
-        st.warning("جاري جلب البيانات من السيرفر، يرجى الانتظار...")
+        st.info("لا توجد مباريات جارية حالياً لهذه البطولة.")
 
 if __name__ == '__main__': main()
