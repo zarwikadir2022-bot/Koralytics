@@ -19,11 +19,9 @@ st.set_page_config(
 def get_unique_visitors():
     count_file = "visit_count.txt"
     if 'visited' not in st.session_state:
-        # إنشاء الملف إذا لم يكن موجوداً
         if not os.path.exists(count_file):
             with open(count_file, "w") as f: f.write("0")
         
-        # قراءة وزيادة العدد
         with open(count_file, "r") as f:
             try: current_count = int(f.read())
             except: current_count = 0
@@ -31,7 +29,6 @@ def get_unique_visitors():
         new_count = current_count + 1
         with open(count_file, "w") as f: f.write(str(new_count))
         
-        # تخزين الحالة في الجلسة لمنع التكرار
         st.session_state['visited'] = True
         st.session_state['total_visitors'] = new_count
     
@@ -61,12 +58,10 @@ def get_match_metrics(row):
     h_odd, a_odd, d_odd = row['1'], row['2'], row['X']
     h_p, a_p, d_p = (1/h_odd), (1/a_odd), (1/d_odd)
     total = h_p + a_p + d_p
-    # رادار البطاقات
     tightness = 1 - abs((h_p/total) - (a_p/total))
     h_cards = round(1.3 + (tightness * 1.4), 1)
     a_cards = round(1.5 + (tightness * 1.4), 1)
     red_p = int((tightness * 22) + 8)
-    # توقع الأهداف (Poisson)
     prob_u = (1/row['U 2.5']) / ((1/row['O 2.5']) + (1/row['U 2.5']))
     xg = 1.9 if prob_u > 0.55 else 3.4 if prob_u < 0.30 else 2.6
     return (h_p/total)*100, (d_p/total)*100, (a_p/total)*100, h_cards, a_cards, red_p, xg
@@ -103,7 +98,6 @@ def main():
     # --- القائمة الجانبية ---
     st.sidebar.title("💎 Koralytics AI")
     
-    # عداد الزوار (لا يتكرر عند تغيير الدوري)
     st.sidebar.markdown(f"""
         <div class="visitor-badge">
             <span style="color:#7f8c8d; font-size:0.8rem; font-weight:bold;">الزوار الفريدون</span><br>
@@ -114,14 +108,18 @@ def main():
     sports = fetch_leagues()
     if not sports: st.sidebar.error("تأكد من الـ API KEY"); return
     
+    # ترتيب الرياضات: جعل Soccer في المقدمة
     grps = sorted(list(set([s['group'] for s in sports])))
+    if "Soccer" in grps:
+        grps.remove("Soccer")
+        grps.insert(0, "Soccer") # وضع كرة القدم في أول القائمة
+    
     sel_grp = st.sidebar.selectbox("🏅 الرياضة", grps)
     l_map = {s['title']: s['key'] for s in sports if s['group'] == sel_grp}
     sel_l = st.sidebar.selectbox("🏆 البطولة", list(l_map.keys()))
     
     budget = st.sidebar.number_input("💵 ميزانيتك ($):", 10.0, 10000.0, 500.0)
 
-    # نظام الورقة (Ticket)
     if st.session_state["my_ticket"]:
         st.sidebar.markdown('<div class="ticket-box">#### 🧾 ورقتي الحالية', unsafe_allow_html=True)
         total_odd = 1.0
@@ -137,7 +135,6 @@ def main():
     df = fetch_odds(l_map[sel_l])
     
     if not df.empty:
-        # العصا السحرية
         if st.button("🪄 العصا السحرية (أفضل 3 فرص)"):
             best = df.sort_values(by="1", ascending=True).head(3)
             st.session_state["my_ticket"] = [{"pick": f"Win {r['المضيف']}", "odd": r['1']} for _, r in best.iterrows()]
