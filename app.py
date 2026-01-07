@@ -64,7 +64,7 @@ if 'v' not in st.session_state:
 
 st.markdown(f"""
 <div class="ticker-wrap"><div class="ticker">
-    <span style="padding:0 30px;">🔥 مرحباً بزوار تونيزيا سات في Koralytics AI</span>
+    <span style="padding:0 30px;">🔥 مرحباً بزوارنا الكرام  في Koralytics AI</span>
     <span style="padding:0 30px;">🎯 إجمالي التحليلات المنجزة: {get_stat('deep_analysis')}</span>
     <span style="padding:0 30px;">👤 عدد الزوار الكلي: {get_stat('unique_visitors')}</span>
     <span style="padding:0 30px;">⚽ تحليل ذكي وشامل لجميع مباريات اليوم بتوقيت تونس</span>
