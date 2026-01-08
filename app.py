@@ -5,37 +5,27 @@ import os
 from datetime import datetime, timedelta
 
 # --- 1. إعدادات الصفحة ---
-st.set_page_config(page_title="Koralytics AI | Final Fix", page_icon="⚽", layout="wide")
+st.set_page_config(page_title="Koralytics AI | Ultimate", page_icon="💎", layout="wide")
 
-# --- 2. محرك الإحصائيات (مصحح التنسيق) ---
+# --- 2. محرك الإحصائيات ---
 def safe_stat_update(feat):
     fn = f"stat_{feat}.txt"
     try:
         if not os.path.exists(fn):
-            with open(fn, "w") as f:
-                f.write("0")
+            with open(fn, "w") as f: f.write("0")
             current = 0
         else:
-            with open(fn, "r") as f:
-                content = f.read().strip()
-                current = int(content) if content else 0
-        
+            with open(fn, "r") as f: current = int(f.read().strip())
         new_val = current + 1
-        with open(fn, "w") as f:
-            f.write(str(new_val))
+        with open(fn, "w") as f: f.write(str(new_val))
         return new_val
-    except:
-        return 0
+    except: return 0
 
 def get_stat_only(feat):
     fn = f"stat_{feat}.txt"
-    if not os.path.exists(fn):
-        return 0
-    try:
-        with open(fn, "r") as f:
-            return int(f.read().strip())
-    except:
-        return 0
+    if not os.path.exists(fn): return 0
+    try: with open(fn, "r") as f: return int(f.read().strip())
+    except: return 0
 
 if 'session_tracked' not in st.session_state:
     safe_stat_update("unique_visitors")
@@ -60,69 +50,84 @@ st.markdown("""
 
 # --- 4. العرض العلوي ---
 v_total = get_stat_only('unique_visitors')
-a_total = get_stat_only('deep_analysis')
 st.markdown(f"""
 <div class="ticker-wrap"><div class="ticker">
     <span style="padding:0 50px;">🌍 Koralytics AI: التحليل الذكي لمباريات كرة القدم ⚽</span>
-    <span style="padding:0 50px;">👤 الزوار: {v_total} | 🎯 التحليلات: {a_total}</span>
-    <span style="padding:0 50px;">🇹🇳 توقيت تونس (GMT+1) | تغطية حصرية لكأس أمم أفريقيا</span>
+    <span style="padding:0 50px;">👤 الزوار: {v_total} | 🇹🇳 توقيت تونس (GMT+1)</span>
 </div></div>
 """, unsafe_allow_html=True)
 
-# --- 5. محرك البيانات ---
-API_KEY = st.secrets.get("ODDS_API_KEY", "YOUR_KEY")
+# --- 5. محرك الـ 10 مفاتيح (The 10-Key Engine) ---
+ALL_KEYS = [
+    st.secrets.get("KEY1"), st.secrets.get("KEY2"), st.secrets.get("KEY3"), st.secrets.get("KEY4"), st.secrets.get("KEY5"),
+    st.secrets.get("KEY6"), st.secrets.get("KEY7"), st.secrets.get("KEY8"), st.secrets.get("KEY9"), st.secrets.get("KEY10")
+]
+# استبعاد المفاتيح الفارغة
+VALID_KEYS = [k for k in ALL_KEYS if k is not None]
 
-def fetch_data(l_key):
-    try:
-        url = f'https://api.the-odds-api.com/v4/sports/{l_key}/odds'
-        params = {'apiKey': API_KEY, 'regions': 'eu', 'markets': 'h2h,totals', 'oddsFormat': 'decimal'}
-        response = requests.get(url, params=params, timeout=10)
+def fetch_data_with_rotation(l_key):
+    # الدوران على المفاتيح المتاحة
+    for i, api_key in enumerate(VALID_KEYS):
+        try:
+            url = f'https://api.the-odds-api.com/v4/sports/{l_key}/odds'
+            params = {'apiKey': api_key, 'regions': 'eu', 'markets': 'h2h,totals', 'oddsFormat': 'decimal'}
+            response = requests.get(url, params=params, timeout=6)
+            
+            # إذا نجح الاتصال
+            if response.status_code == 200:
+                return process_response(response.json())
+            
+            # إذا انتهى الرصيد أو المفتاح محظور، ننتقل للتالي
+            elif response.status_code in [401, 429]:
+                continue
+                
+        except: continue
+            
+    return pd.DataFrame()
+
+def process_response(r):
+    res = []
+    for m in r:
+        if not m.get('bookmakers'): continue
+        mkts = m['bookmakers'][0].get('markets', [])
+        h2h = next((i for i in mkts if i['key'] == 'h2h'), None)
+        totals = next((i for i in mkts if i['key'] == 'totals'), None)
         
-        if response.status_code != 200: return pd.DataFrame()
+        if h2h:
+            dt = datetime.strptime(m['commence_time'], "%Y-%m-%dT%H:%M:%SZ") + timedelta(hours=1)
+            over_price = totals['outcomes'][0]['price'] if (totals and len(totals['outcomes']) > 0) else 1.85
+            under_price = totals['outcomes'][1]['price'] if (totals and len(totals['outcomes']) > 1) else 1.85
             
-        r = response.json()
-        res = []
-        for m in r:
-            if not m.get('bookmakers'): continue
-            mkts = m['bookmakers'][0].get('markets', [])
-            h2h = next((i for i in mkts if i['key'] == 'h2h'), None)
-            totals = next((i for i in mkts if i['key'] == 'totals'), None)
-            
-            if h2h:
-                dt = datetime.strptime(m['commence_time'], "%Y-%m-%dT%H:%M:%SZ") + timedelta(hours=1)
-                
-                over_price = 1.85
-                under_price = 1.85
-                if totals and len(totals['outcomes']) > 1:
-                    over_price = totals['outcomes'][0]['price']
-                    under_price = totals['outcomes'][1]['price']
-                
-                outcomes = h2h['outcomes']
-                p1 = outcomes[0]['price']
-                p2 = outcomes[1]['price']
-                px = 1.0
-                if len(outcomes) > 2:
-                    px = outcomes[2]['price']
+            outcomes = h2h['outcomes']
+            p1 = outcomes[0]['price']
+            p2 = outcomes[1]['price']
+            px = outcomes[2]['price'] if len(outcomes) > 2 else 1.0
 
-                res.append({
-                    "المضيف": m['home_team'], "الضيف": m['away_team'],
-                    "التاريخ": dt.strftime("%d/%m"), "الوقت": dt.strftime("%H:%M"),
-                    "1": p1, "2": p2, "X": px,
-                    "أكثر 2.5": over_price, "أقل 2.5": under_price
-                })
-        return pd.DataFrame(res)
-    except: return pd.DataFrame()
+            res.append({
+                "المضيف": m['home_team'], "الضيف": m['away_team'],
+                "التاريخ": dt.strftime("%d/%m"), "الوقت": dt.strftime("%H:%M"),
+                "1": p1, "2": p2, "X": px,
+                "أكثر 2.5": over_price, "أقل 2.5": under_price
+            })
+    return pd.DataFrame(res)
 
-# --- 6. القائمة الجانبية (الأولوية لكرة القدم) ---
+# --- 6. القائمة الجانبية ---
 st.sidebar.title("💎 Koralytics AI")
 budget = st.sidebar.number_input("💰 ميزانية الاستثمار ($):", 10, 5000, 500)
 
 try:
-    s_req = requests.get(f'https://api.the-odds-api.com/v4/sports/?apiKey={API_KEY}', timeout=10)
-    if s_req.status_code == 200:
-        sports_data = s_req.json()
+    sports_data = []
+    # محاولة جلب القائمة بأي مفتاح صالح
+    for key in VALID_KEYS:
+        try:
+            req = requests.get(f'https://api.the-odds-api.com/v4/sports/?apiKey={key}', timeout=5)
+            if req.status_code == 200:
+                sports_data = req.json()
+                break
+        except: continue
+
+    if sports_data:
         sport_groups = sorted(list(set([s['group'] for s in sports_data])))
-        
         if 'Soccer' in sport_groups:
             sport_groups.remove('Soccer')
             sport_groups.insert(0, 'Soccer')
@@ -130,24 +135,22 @@ try:
         sel_group = st.sidebar.selectbox("🏀 نوع الرياضة", sport_groups, index=0)
         l_map = {s['title']: s['key'] for s in sports_data if s['group'] == sel_group}
         
-        # اختيار ذكي للبطولة
         l_keys = list(l_map.keys())
         default_idx = 0
         for i, k in enumerate(l_keys):
             if "Africa" in k or "Premier League" in k:
                 default_idx = i
                 break
-        
         sel_l_name = st.sidebar.selectbox("🏆 البطولة", l_keys, index=default_idx)
     else:
-        st.sidebar.error("خطأ في الاتصال")
+        st.sidebar.error("خطأ في الاتصال بالبيانات")
         st.stop()
 except:
     st.sidebar.warning("جاري التحميل...")
     st.stop()
 
 # --- 7. التحليل والعرض ---
-df = fetch_data(l_map[sel_l_name])
+df = fetch_data_with_rotation(l_map[sel_l_name])
 
 if not df.empty:
     st.subheader(f"📅 جدول مباريات {sel_l_name}")
@@ -176,7 +179,6 @@ if not df.empty:
     xh, xa = round(xg_base*(prob1/100)+0.4, 1), round(xg_base*(prob2/100)+0.2, 1)
     ch, ca = round(2.1+(prob2/100), 1), round(2.3+(prob1/100), 1)
 
-    # ألوان المستشار المالي
     if conf > 80: advice, color, bg = "🚀 فرصة ذهبية", "#16a34a", "#f0fdf4"
     elif conf > 65: advice, color, bg = "⚖️ استثمار متوازن", "#2563eb", "#eff6ff"
     else: advice, color, bg = "⚠️ مخاطرة عالية", "#dc2626", "#fef2f2"
@@ -202,5 +204,5 @@ if not df.empty:
         st.subheader("📊 احتمالات الفوز")
         st.bar_chart(pd.DataFrame({'%': [prob1, probx, prob2]}, index=[row['المضيف'], 'تعادل', row['الضيف']]))
 else:
-    st.warning("⚠️ لا توجد مباريات متاحة في هذه البطولة حالياً.")
-    st.info("💡 اختر بطولة أخرى من القائمة.")
+    st.warning("⚠️ لا توجد مباريات متاحة حالياً.")
+    st.info("💡 النظام يعمل بكامل طاقته، حاول تغيير البطولة.")
