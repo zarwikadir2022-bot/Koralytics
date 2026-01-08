@@ -5,7 +5,7 @@ import os
 from datetime import datetime, timedelta
 
 # --- 1. إعدادات الصفحة ---
-st.set_page_config(page_title="Koralytics AI | Ultimate Lab", page_icon="💎", layout="wide")
+st.set_page_config(page_title="Koralytics AI | Multi-Sport Pro", page_icon="💎", layout="wide")
 
 # --- 2. محرك الإحصائيات (الزوار والتحليلات) ---
 def get_stat(feat):
@@ -23,22 +23,14 @@ def update_stat(feat):
     with open(f"stat_{feat}.txt", "w") as f: f.write(str(new_val))
     return new_val
 
-# منع تكرار العداد عند الـ Refresh
-if 'is_counted' not in st.session_state:
+if 'user_counted' not in st.session_state:
     update_stat("unique_visitors")
-    st.session_state['is_counted'] = True
+    st.session_state['user_counted'] = True
 
 def track_league(league_name):
     with open("stat_leagues.txt", "a", encoding="utf-8") as f: f.write(league_name + "\n")
 
-def get_popular_leagues():
-    fn = "stat_leagues.txt"
-    if not os.path.exists(fn): return {}
-    with open(fn, "r", encoding="utf-8") as f:
-        leagues = f.read().splitlines()
-    return pd.Series([l for l in leagues if l]).value_counts().head(3).to_dict() if leagues else {}
-
-# --- 3. تصميم الواجهة (CSS) ---
+# --- 3. التصميم (CSS) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
@@ -54,19 +46,18 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 4. الشريط العلوي ---
+# --- 4. الواجهة العلوية ---
 v_total = get_stat('unique_visitors')
 a_total = get_stat('deep_analysis')
 st.markdown(f"""
 <div class="ticker-wrap"><div class="ticker">
-    <span style="padding:0 30px;">🌍 كأس أمم أفريقيا: تحليل الجزائر ومصر والمغرب الآن </span>
+    <span style="padding:0 30px;">🌍 كأس أمم أفريقيا والبطولات العالمية | تحليل ذكي ومستشار مالي 💎</span>
     <span style="padding:0 30px;">👤 الزوار: {v_total}</span>
-    <span style="padding:0 30px;">🎯 التحليلات المنجزة: {a_total}</span>
-    <span style="padding:0 30px;">💎 Koralytics AI: المستشار المالي والرياضي الأول</span>
+    <span style="padding:0 30px;">🎯 التحليلات: {a_total}</span>
 </div></div>
 """, unsafe_allow_html=True)
 
-# --- 5. جلب البيانات ---
+# --- 5. جلب البيانات من API ---
 API_KEY = st.secrets.get("ODDS_API_KEY", "YOUR_KEY")
 
 @st.cache_data(ttl=600)
@@ -89,21 +80,21 @@ def fetch_data(l_key):
         return pd.DataFrame(res)
     except: return pd.DataFrame()
 
-# --- 6. القائمة الجانبية ---
+# --- 6. القائمة الجانبية (Sidebar) مع زر نوع الرياضة ---
 st.sidebar.title("💎 Koralytics AI")
 invest_budget = st.sidebar.number_input("💰 ميزانية الاستثمار ($):", 10, 5000, 500)
 
 try:
     sports_data = requests.get(f'https://api.the-odds-api.com/v4/sports/?apiKey={API_KEY}').json()
-    l_map = {s['title']: s['key'] for s in sports_data if s['group'] == 'Soccer'}
-    sel_l_name = st.sidebar.selectbox("🏆 البطولة", list(l_map.keys()))
+    # استخراج أنواع الرياضة المتاحة
+    sport_groups = sorted(list(set([s['group'] for s in sports_data])))
+    # زر اختيار نوع الرياضة الذي عاد!
+    sel_group = st.sidebar.selectbox("🏀 نوع الرياضة", sport_groups, index=sport_groups.index('Soccer') if 'Soccer' in sport_groups else 0)
     
-    st.sidebar.markdown("---")
-    pop = get_popular_leagues()
-    if pop:
-        st.sidebar.subheader("🔥 الأكثر طلباً")
-        for l, c in pop.items(): st.sidebar.write(f"📊 {l}: {c}")
-except: st.stop()
+    # تصفية البطولات بناءً على الرياضة المختارة
+    l_map = {s['title']: s['key'] for s in sports_data if s['group'] == sel_group}
+    sel_l_name = st.sidebar.selectbox("🏆 البطولة", list(l_map.keys()))
+except: st.error("خطأ في جلب الرياضات"); st.stop()
 
 # --- 7. التحليل والمختبر ---
 df = fetch_data(l_map[sel_l_name])
@@ -130,14 +121,12 @@ if not df.empty:
     conf = int(max(p1, p2, px) + 12)
     xg_total = 1.9 if row['أقل 2.5'] > row['أكثر 2.5'] else 3.1
     
-    # تفصيل البيانات (ميزتك المطلوبة)
     xg_h, xg_a = round(xg_total*(p1/100)+0.4, 1), round(xg_total*(p2/100)+0.2, 1)
     c_h, c_a = round(2.1+(p2/100), 1), round(2.3+(p1/100), 1)
 
-    # 1. النتيجة المتوقعة
+    # النتيجة المتوقعة والمستشار المالي
     st.markdown(f'<div class="score-banner"><small>النتيجة المتوقعة</small><br><span style="font-size:3.5rem;">{int(xg_h)} - {int(xg_a)}</span></div>', unsafe_allow_html=True)
 
-    # 2. المستشار المالي (ميزتك المطلوبة)
     advice = "🚀 فرصة ذهبية" if conf > 80 else "⚖️ استثمار متوازن" if conf > 65 else "⚠️ مخاطرة عالية"
     st.markdown(f"""
     <div class="advisor-card">
@@ -158,5 +147,4 @@ if not df.empty:
         st.subheader("📊 نسب الفوز")
         st.bar_chart(pd.DataFrame({'%': [p1, px, p2]}, index=[row['المضيف'], 'تعادل', row['الضيف']]))
 else:
-    st.warning("يرجى اختيار بطولة نشطة من القائمة الجانبية.")
-
+    st.warning("لا توجد مباريات جارية حالياً لهذه البطولة.")
