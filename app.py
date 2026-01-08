@@ -5,27 +5,37 @@ import os
 from datetime import datetime, timedelta
 
 # --- 1. إعدادات الصفحة ---
-st.set_page_config(page_title="Koralytics AI | Community", page_icon="💎", layout="wide")
+st.set_page_config(page_title="Koralytics AI | Community V77", page_icon="💎", layout="wide")
 
-# --- 2. محرك الإحصائيات ---
+# --- 2. محرك الإحصائيات (مصحح 100%) ---
 def safe_stat_update(feat):
     fn = f"stat_{feat}.txt"
     try:
         if not os.path.exists(fn):
-            with open(fn, "w") as f: f.write("0")
+            with open(fn, "w") as f:
+                f.write("0")
             current = 0
         else:
-            with open(fn, "r") as f: content = f.read().strip(); current = int(content) if content else 0
+            with open(fn, "r") as f:
+                content = f.read().strip()
+                current = int(content) if content else 0
+        
         new_val = current + 1
-        with open(fn, "w") as f: f.write(str(new_val))
+        with open(fn, "w") as f:
+            f.write(str(new_val))
         return new_val
-    except: return 0
+    except:
+        return 0
 
 def get_stat_only(feat):
     fn = f"stat_{feat}.txt"
-    if not os.path.exists(fn): return 0
-    try: with open(fn, "r") as f: return int(f.read().strip())
-    except: return 0
+    if not os.path.exists(fn):
+        return 0
+    try:
+        with open(fn, "r") as f:
+            return int(f.read().strip())
+    except:
+        return 0
 
 if 'session_tracked' not in st.session_state:
     safe_stat_update("unique_visitors")
@@ -58,23 +68,10 @@ st.markdown("""
     .score-banner { background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%); color: #fbbf24; padding: 30px; border-radius: 20px; text-align: center; border: 2px solid #fbbf24; margin-bottom: 20px; }
     .stat-box { background: white; padding: 12px; border-radius: 10px; border-right: 6px solid #1e3a8a; margin-bottom: 10px; border: 1px solid #e2e8f0; font-weight: bold; color: #1e3a8a; }
     .advisor-card { padding: 20px; border-radius: 15px; text-align: center; font-weight: bold; border: 2px solid; margin-top: 10px; }
-    
-    /* زر التواصل */
-    .contact-btn {
-        display: inline-block;
-        background-color: #25D366;
-        color: white;
-        padding: 10px 20px;
-        border-radius: 5px;
-        text-decoration: none;
-        font-weight: bold;
-        margin-top: 10px;
-    }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 4. منطقة الإعلانات (التحضير للمستقبل) ---
-# يمكنك تغيير هذا النص لاحقاً للإعلان عن الدفع
+# --- 4. منطقة الإعلانات ---
 ANNOUNCEMENT_TEXT = "🔥 استمتعوا بجميع خدمات Koralytics مجاناً لفترة محدودة! لا تنسوا الانضمام لقناتنا."
 SHOW_ANNOUNCEMENT = True
 
@@ -106,9 +103,12 @@ def fetch_data_with_rotation(l_key):
             url = f'https://api.the-odds-api.com/v4/sports/{l_key}/odds'
             params = {'apiKey': api_key, 'regions': 'eu', 'markets': 'h2h,totals', 'oddsFormat': 'decimal'}
             response = requests.get(url, params=params, timeout=6)
-            if response.status_code == 200: return process_response(response.json())
-            elif response.status_code in [401, 429]: continue
-        except: continue
+            if response.status_code == 200:
+                return process_response(response.json())
+            elif response.status_code in [401, 429]:
+                continue
+        except:
+            continue
     return pd.DataFrame()
 
 def process_response(r):
@@ -118,12 +118,21 @@ def process_response(r):
         mkts = m['bookmakers'][0].get('markets', [])
         h2h = next((i for i in mkts if i['key'] == 'h2h'), None)
         totals = next((i for i in mkts if i['key'] == 'totals'), None)
+        
         if h2h:
             dt = datetime.strptime(m['commence_time'], "%Y-%m-%dT%H:%M:%SZ") + timedelta(hours=1)
-            over_price = totals['outcomes'][0]['price'] if (totals and len(totals['outcomes']) > 0) else 1.85
-            under_price = totals['outcomes'][1]['price'] if (totals and len(totals['outcomes']) > 1) else 1.85
+            
+            over_price = 1.85
+            under_price = 1.85
+            if totals and len(totals['outcomes']) > 1:
+                over_price = totals['outcomes'][0]['price']
+                under_price = totals['outcomes'][1]['price']
+            
             outcomes = h2h['outcomes']
-            p1, p2, px = outcomes[0]['price'], outcomes[1]['price'], (outcomes[2]['price'] if len(outcomes) > 2 else 1.0)
+            p1 = outcomes[0]['price']
+            p2 = outcomes[1]['price']
+            px = outcomes[2]['price'] if len(outcomes) > 2 else 1.0
+
             res.append({
                 "المضيف": m['home_team'], "الضيف": m['away_team'],
                 "التاريخ": dt.strftime("%d/%m"), "الوقت": dt.strftime("%H:%M"),
@@ -132,13 +141,12 @@ def process_response(r):
             })
     return pd.DataFrame(res)
 
-# --- 7. القائمة الجانبية (مع رابط المجتمع) ---
+# --- 7. القائمة الجانبية ---
 st.sidebar.title("💎 Koralytics AI")
 budget = st.sidebar.number_input("💰 ميزانية الاستثمار ($):", 10, 5000, 500)
 
 st.sidebar.markdown("---")
 st.sidebar.info("🔔 **كن أول من يعلم!**")
-# يمكنك وضع رابط قناتك هنا لاحقاً
 st.sidebar.markdown('[انضم لقناة التليجرام (قريباً)](#)', unsafe_allow_html=True) 
 st.sidebar.markdown("---")
 
@@ -147,21 +155,31 @@ try:
     for key in VALID_KEYS:
         try:
             req = requests.get(f'https://api.the-odds-api.com/v4/sports/?apiKey={key}', timeout=5)
-            if req.status_code == 200: sports_data = req.json(); break
+            if req.status_code == 200:
+                sports_data = req.json()
+                break
         except: continue
 
     if sports_data:
         sport_groups = sorted(list(set([s['group'] for s in sports_data])))
-        if 'Soccer' in sport_groups: sport_groups.remove('Soccer'); sport_groups.insert(0, 'Soccer')
+        if 'Soccer' in sport_groups:
+            sport_groups.remove('Soccer')
+            sport_groups.insert(0, 'Soccer')
+        
         sel_group = st.sidebar.selectbox("🏀 نوع الرياضة", sport_groups, index=0)
         l_map = {s['title']: s['key'] for s in sports_data if s['group'] == sel_group}
+        
         l_keys = list(l_map.keys())
         default_idx = 0
         for i, k in enumerate(l_keys):
-            if "Africa" in k or "Premier League" in k: default_idx = i; break
+            if "Africa" in k or "Premier League" in k:
+                default_idx = i
+                break
         sel_l_name = st.sidebar.selectbox("🏆 البطولة", l_keys, index=default_idx)
-    else: st.stop()
-except: st.stop()
+    else:
+        st.stop()
+except:
+    st.stop()
 
 # --- 8. التحليل والعرض ---
 df = fetch_data_with_rotation(l_map[sel_l_name])
