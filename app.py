@@ -5,48 +5,51 @@ import os
 from datetime import datetime, timedelta
 
 # --- 1. إعدادات الصفحة ---
-st.set_page_config(page_title="Koralytics AI | Fixed V75", page_icon="💎", layout="wide")
+st.set_page_config(page_title="Koralytics AI | Community", page_icon="💎", layout="wide")
 
-# --- 2. محرك الإحصائيات (مصحح 100%) ---
+# --- 2. محرك الإحصائيات ---
 def safe_stat_update(feat):
     fn = f"stat_{feat}.txt"
     try:
         if not os.path.exists(fn):
-            with open(fn, "w") as f:
-                f.write("0")
+            with open(fn, "w") as f: f.write("0")
             current = 0
         else:
-            with open(fn, "r") as f:
-                content = f.read().strip()
-                current = int(content) if content else 0
-        
+            with open(fn, "r") as f: content = f.read().strip(); current = int(content) if content else 0
         new_val = current + 1
-        with open(fn, "w") as f:
-            f.write(str(new_val))
+        with open(fn, "w") as f: f.write(str(new_val))
         return new_val
-    except:
-        return 0
+    except: return 0
 
 def get_stat_only(feat):
     fn = f"stat_{feat}.txt"
-    if not os.path.exists(fn):
-        return 0
-    try:
-        with open(fn, "r") as f:
-            return int(f.read().strip())
-    except:
-        return 0
+    if not os.path.exists(fn): return 0
+    try: with open(fn, "r") as f: return int(f.read().strip())
+    except: return 0
 
 if 'session_tracked' not in st.session_state:
     safe_stat_update("unique_visitors")
     st.session_state['session_tracked'] = True
 
-# --- 3. CSS ---
+# --- 3. CSS (تحسينات للإعلان) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
     * { font-family: 'Cairo', sans-serif; direction: rtl; text-align: right; }
     .stApp { background: #f8fafc; }
+    
+    /* شريط التنبيهات */
+    .alert-banner {
+        background-color: #fff3cd;
+        color: #856404;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #ffeeba;
+        text-align: center;
+        margin-bottom: 20px;
+        font-weight: bold;
+    }
+    
     .ticker-wrap { width: 100%; overflow: hidden; background: #fbbf24; padding: 12px 0; border-bottom: 3px solid #000; margin-bottom: 25px; }
     .ticker { display: inline-block; white-space: nowrap; animation: ticker 30s linear infinite; font-weight: bold; color: #000; }
     @keyframes ticker { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
@@ -55,10 +58,30 @@ st.markdown("""
     .score-banner { background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%); color: #fbbf24; padding: 30px; border-radius: 20px; text-align: center; border: 2px solid #fbbf24; margin-bottom: 20px; }
     .stat-box { background: white; padding: 12px; border-radius: 10px; border-right: 6px solid #1e3a8a; margin-bottom: 10px; border: 1px solid #e2e8f0; font-weight: bold; color: #1e3a8a; }
     .advisor-card { padding: 20px; border-radius: 15px; text-align: center; font-weight: bold; border: 2px solid; margin-top: 10px; }
+    
+    /* زر التواصل */
+    .contact-btn {
+        display: inline-block;
+        background-color: #25D366;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        text-decoration: none;
+        font-weight: bold;
+        margin-top: 10px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 4. العرض العلوي (مع العدادين) ---
+# --- 4. منطقة الإعلانات (التحضير للمستقبل) ---
+# يمكنك تغيير هذا النص لاحقاً للإعلان عن الدفع
+ANNOUNCEMENT_TEXT = "🔥 استمتعوا بجميع خدمات Koralytics مجاناً لفترة محدودة! لا تنسوا الانضمام لقناتنا."
+SHOW_ANNOUNCEMENT = True
+
+if SHOW_ANNOUNCEMENT:
+    st.markdown(f'<div class="alert-banner">📢 {ANNOUNCEMENT_TEXT}</div>', unsafe_allow_html=True)
+
+# --- 5. العرض العلوي والعدادات ---
 v_total = get_stat_only('unique_visitors')
 a_total = get_stat_only('deep_analysis')
 
@@ -70,7 +93,7 @@ st.markdown(f"""
 </div></div>
 """, unsafe_allow_html=True)
 
-# --- 5. محرك الـ 10 مفاتيح ---
+# --- 6. محرك الـ 10 مفاتيح ---
 ALL_KEYS = [
     st.secrets.get("KEY1"), st.secrets.get("KEY2"), st.secrets.get("KEY3"), st.secrets.get("KEY4"), st.secrets.get("KEY5"),
     st.secrets.get("KEY6"), st.secrets.get("KEY7"), st.secrets.get("KEY8"), st.secrets.get("KEY9"), st.secrets.get("KEY10")
@@ -83,12 +106,9 @@ def fetch_data_with_rotation(l_key):
             url = f'https://api.the-odds-api.com/v4/sports/{l_key}/odds'
             params = {'apiKey': api_key, 'regions': 'eu', 'markets': 'h2h,totals', 'oddsFormat': 'decimal'}
             response = requests.get(url, params=params, timeout=6)
-            if response.status_code == 200:
-                return process_response(response.json())
-            elif response.status_code in [401, 429]:
-                continue
-        except:
-            continue
+            if response.status_code == 200: return process_response(response.json())
+            elif response.status_code in [401, 429]: continue
+        except: continue
     return pd.DataFrame()
 
 def process_response(r):
@@ -98,21 +118,12 @@ def process_response(r):
         mkts = m['bookmakers'][0].get('markets', [])
         h2h = next((i for i in mkts if i['key'] == 'h2h'), None)
         totals = next((i for i in mkts if i['key'] == 'totals'), None)
-        
         if h2h:
             dt = datetime.strptime(m['commence_time'], "%Y-%m-%dT%H:%M:%SZ") + timedelta(hours=1)
-            
-            over_price = 1.85
-            under_price = 1.85
-            if totals and len(totals['outcomes']) > 1:
-                over_price = totals['outcomes'][0]['price']
-                under_price = totals['outcomes'][1]['price']
-            
+            over_price = totals['outcomes'][0]['price'] if (totals and len(totals['outcomes']) > 0) else 1.85
+            under_price = totals['outcomes'][1]['price'] if (totals and len(totals['outcomes']) > 1) else 1.85
             outcomes = h2h['outcomes']
-            p1 = outcomes[0]['price']
-            p2 = outcomes[1]['price']
-            px = outcomes[2]['price'] if len(outcomes) > 2 else 1.0
-
+            p1, p2, px = outcomes[0]['price'], outcomes[1]['price'], (outcomes[2]['price'] if len(outcomes) > 2 else 1.0)
             res.append({
                 "المضيف": m['home_team'], "الضيف": m['away_team'],
                 "التاريخ": dt.strftime("%d/%m"), "الوقت": dt.strftime("%H:%M"),
@@ -121,42 +132,38 @@ def process_response(r):
             })
     return pd.DataFrame(res)
 
-# --- 6. القائمة الجانبية ---
+# --- 7. القائمة الجانبية (مع رابط المجتمع) ---
 st.sidebar.title("💎 Koralytics AI")
 budget = st.sidebar.number_input("💰 ميزانية الاستثمار ($):", 10, 5000, 500)
+
+st.sidebar.markdown("---")
+st.sidebar.info("🔔 **كن أول من يعلم!**")
+# يمكنك وضع رابط قناتك هنا لاحقاً
+st.sidebar.markdown('[انضم لقناة التليجرام (قريباً)](#)', unsafe_allow_html=True) 
+st.sidebar.markdown("---")
 
 try:
     sports_data = []
     for key in VALID_KEYS:
         try:
             req = requests.get(f'https://api.the-odds-api.com/v4/sports/?apiKey={key}', timeout=5)
-            if req.status_code == 200:
-                sports_data = req.json()
-                break
+            if req.status_code == 200: sports_data = req.json(); break
         except: continue
 
     if sports_data:
         sport_groups = sorted(list(set([s['group'] for s in sports_data])))
-        if 'Soccer' in sport_groups:
-            sport_groups.remove('Soccer')
-            sport_groups.insert(0, 'Soccer')
-        
+        if 'Soccer' in sport_groups: sport_groups.remove('Soccer'); sport_groups.insert(0, 'Soccer')
         sel_group = st.sidebar.selectbox("🏀 نوع الرياضة", sport_groups, index=0)
         l_map = {s['title']: s['key'] for s in sports_data if s['group'] == sel_group}
-        
         l_keys = list(l_map.keys())
         default_idx = 0
         for i, k in enumerate(l_keys):
-            if "Africa" in k or "Premier League" in k:
-                default_idx = i
-                break
+            if "Africa" in k or "Premier League" in k: default_idx = i; break
         sel_l_name = st.sidebar.selectbox("🏆 البطولة", l_keys, index=default_idx)
-    else:
-        st.stop()
-except:
-    st.stop()
+    else: st.stop()
+except: st.stop()
 
-# --- 7. التحليل والعرض ---
+# --- 8. التحليل والعرض ---
 df = fetch_data_with_rotation(l_map[sel_l_name])
 
 if not df.empty:
