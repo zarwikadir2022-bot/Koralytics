@@ -5,9 +5,9 @@ import os
 from datetime import datetime, timedelta
 
 # --- 1. إعدادات الصفحة ---
-st.set_page_config(page_title="Koralytics AI | Financial & Analytics Pro", page_icon="💎", layout="wide")
+st.set_page_config(page_title="Koralytics AI | Financial Elite", page_icon="💎", layout="wide")
 
-# --- 2. محرك الإحصائيات (عداد حقيقي) ---
+# --- 2. محرك الإحصائيات (تثبيت العدادات) ---
 def get_stat(feat):
     fn = f"stat_{feat}.txt"
     if not os.path.exists(fn):
@@ -27,28 +27,27 @@ if 'counted' not in st.session_state:
     update_stat("unique_visitors")
     st.session_state['counted'] = True
 
-def track_league(league_name):
-    with open("stat_leagues.txt", "a", encoding="utf-8") as f: f.write(league_name + "\n")
-
-# --- 3. محرك التوقعات والذكاء المالي ---
-def financial_advice(confidence, p1, px, p2):
-    if confidence > 85: return "💰 فرصة ذهبية: ثقة عالية جداً. استثمار آمن."
-    if confidence > 70: return "⚖️ استثمار متوسط: حظوظ قوية، لكن التزم بالحذر."
-    return "⚠️ مخاطرة عالية: لا تنصح بالاستثمار المالي في هذه المباراة."
+# --- 3. محرك المستشار المالي الذكي ---
+def get_financial_plan(conf, budget):
+    if conf > 85:
+        return {"msg": "🚀 فرصة ذهبية: ثقة عالية جداً", "risk": "منخفضة", "bet": budget * 0.15, "color": "#064e3b"}
+    elif conf > 70:
+        return {"msg": "⚖️ استثمار متوازن: حظوظ جيدة", "risk": "متوسطة", "bet": budget * 0.08, "color": "#1e3a8a"}
+    else:
+        return {"msg": "⚠️ مخاطرة عالية: لا ينصح بالمخاطرة", "risk": "عالية", "bet": budget * 0.02, "color": "#991b1b"}
 
 # --- 4. التصميم (CSS) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
     * { font-family: 'Cairo', sans-serif; direction: rtl; text-align: right; }
-    .stApp { background: #f8fafc; }
+    .stApp { background: #f1f5f9; }
     .ticker-wrap { width: 100%; overflow: hidden; background: #fbbf24; padding: 10px 0; border-bottom: 2px solid #000; margin-bottom: 20px; }
-    .ticker { display: inline-block; white-space: nowrap; animation: ticker 30s linear infinite; font-weight: bold; color: #000; }
+    .ticker { display: inline-block; white-space: nowrap; animation: ticker 30s linear infinite; font-weight: bold; }
     @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
-    .match-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; border-right: 5px solid #1e3a8a; }
-    .score-banner { background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%); color: #fbbf24; padding: 25px; border-radius: 20px; text-align: center; border: 2px solid #fbbf24; margin-bottom: 20px; }
-    .stat-box { background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 8px; font-weight: bold; font-size: 0.9rem; }
-    .advisor-box { background: #ecfdf5; border: 1px solid #10b981; padding: 15px; border-radius: 12px; color: #064e3b; font-weight: bold; }
+    .score-banner { background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%); color: #fbbf24; padding: 25px; border-radius: 20px; text-align: center; border: 2px solid #fbbf24; }
+    .stat-box { background: white; padding: 12px; border-radius: 10px; border-right: 6px solid #1e3a8a; margin-bottom: 10px; border: 1px solid #e2e8f0; font-weight: bold; }
+    .advisor-card { background: white; border-radius: 15px; padding: 20px; border: 2px solid #10b981; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
 </style>
 """, unsafe_allow_html=True)
 
@@ -58,10 +57,8 @@ a_count = get_stat('deep_analysis')
 
 st.markdown(f"""
 <div class="ticker-wrap"><div class="ticker">
-    <span style="padding:0 30px;">🌍 كأس أمم أفريقيا: تحليل قمم اليوم ⚽</span>
-    <span style="padding:0 30px;">👤 الزوار: {v_count}</span>
-    <span style="padding:0 30px;">🎯 إجمالي التحليلات: {a_count}</span>
-    <span style="padding:0 30px;">💎 Koralytics AI: المستشار المالي والرياضي الأول</span>
+    <span style="padding:0 30px;">📊 المستشار المالي نشط الآن | الزوار: {v_count} | التحليلات: {a_count}</span>
+    <span style="padding:0 30px;">🏆 كأس أمم أفريقيا: تحليل شامل لمباريات الجزائر، مصر، والمغرب</span>
 </div></div>
 """, unsafe_allow_html=True)
 
@@ -77,10 +74,10 @@ def fetch_data(l_key):
             mkts = m.get('bookmakers', [{}])[0].get('markets', [])
             h2h = next((i for i in mkts if i['key'] == 'h2h'), None)
             totals = next((i for i in mkts if i['key'] == 'totals'), None)
-            if h2h and len(h2h['outcomes']) >= 3:
+            if h2h:
                 res.append({
                     "المضيف": m['home_team'], "الضيف": m['away_team'],
-                    "التوقيت": (datetime.strptime(m['commence_time'], "%Y-%m-%dT%H:%M:%SZ") + timedelta(hours=1)).strftime("%d/%m | %H:%M"),
+                    "التوقيت": (datetime.strptime(m['commence_time'], "%Y-%m-%dT%H:%M:%SZ") + timedelta(hours=1)).strftime("%H:%M"),
                     "1": h2h['outcomes'][0]['price'], "2": h2h['outcomes'][1]['price'], "X": h2h['outcomes'][2]['price'],
                     "أكثر 2.5": totals['outcomes'][0]['price'] if totals else 1.8,
                     "أقل 2.5": totals['outcomes'][1]['price'] if totals else 1.8
@@ -90,67 +87,58 @@ def fetch_data(l_key):
 
 # --- 7. القائمة الجانبية ---
 st.sidebar.title("💎 Koralytics AI")
-st.sidebar.write(f"👤 الزوار: **{v_count}**")
-st.sidebar.write(f"🎯 التحليلات: **{a_count}**")
+budget = st.sidebar.number_input("💰 ميزانية الاستثمار ($):", 10, 10000, 500)
 
 try:
     sports_data = requests.get(f'https://api.the-odds-api.com/v4/sports/?apiKey={API_KEY}').json()
-    sport_groups = sorted(list(set([s['group'] for s in sports_data])))
-    sel_group = st.sidebar.selectbox("🏀 نوع الرياضة", sport_groups, index=0)
-    l_map = {s['title']: s['key'] for s in sports_data if s['group'] == sel_group}
-    sel_l_name = st.sidebar.selectbox("🏆 البطولة", list(l_map.keys()))
+    l_map = {s['title']: s['key'] for s in sports_data if s['group'] == 'Soccer'}
+    sel_l_name = st.sidebar.selectbox("🏆 اختر البطولة", list(l_map.keys()), index=0)
 except: st.stop()
 
 # --- 8. العرض الرئيسي ---
 df = fetch_data(l_map[sel_l_name])
 
 if not df.empty:
-    st.subheader(f"📅 مباريات {sel_l_name}")
-    for _, r in df.iterrows():
-        st.markdown(f'<div class="match-card"><div>🕒 {r["التوقيت"]}<br><b>{r["المضيف"]} vs {r["الضيف"]}</b></div><div>{r["1"]} | {r["X"]} | {r["2"]}</div></div>', unsafe_allow_html=True)
-
-    st.markdown("---")
-    st.header("🔬 المختبر الإحصائي والمستشار المالي")
-    
-    sel_m = st.selectbox("🎯 اختر مباراة لتحليلها تفصيلياً:", [f"{r['المضيف']} ضد {r['الضيف']}" for _, r in df.iterrows()])
+    st.header(f"🔬 تحليل {sel_l_name}")
+    sel_m = st.selectbox("🎯 اختر مباراة للتحليل:", [f"{r['المضيف']} ضد {r['الضيف']}" for _, r in df.iterrows()])
     row = df[df['المضيف'] == sel_m.split(" ضد ")[0]].iloc[0]
 
-    if 'last_m' not in st.session_state or st.session_state['last_m'] != sel_m:
+    if 'last' not in st.session_state or st.session_state['last'] != sel_m:
         update_stat("deep_analysis")
-        st.session_state['last_m'] = sel_m
+        st.session_state['last'] = sel_m
 
-    # حسابات الذكاء الاصطناعي
+    # الحسابات
     p1 = (1/row['1'])/(1/row['1']+1/row['2']+1/row['X'])*100
     p2 = (1/row['2'])/(1/row['1']+1/row['2']+1/row['X'])*100
     px = (1/row['X'])/(1/row['1']+1/row['2']+1/row['X'])*100
-    xg_total = 1.8 if row['أقل 2.5'] > row['أكثر 2.5'] else 3.1
     conf = int(max(p1, p2, px) + 10)
-    
-    # تفصيل الأهداف والبطاقات
-    xg_h = round(xg_total * (p1/100) + 0.5, 1)
-    xg_a = round(xg_total * (p2/100) + 0.3, 1)
-    cards_h = round(2.1 + (p2/100), 1)
-    cards_a = round(2.3 + (p1/100), 1)
+    plan = get_financial_plan(conf, budget)
 
-    # 1. البانر الرئيسي
-    st.markdown(f'<div class="score-banner"><small>النتيجة المتوقعة</small><br><span style="font-size:3.5rem;">{int(xg_h)} - {int(xg_a)}</span></div>', unsafe_allow_html=True)
+    # عرض البانر
+    st.markdown(f'<div class="score-banner"><small>النتيجة المتوقعة</small><br><span style="font-size:3.5rem;">{int(p1/30)} - {int(p2/35)}</span></div>', unsafe_allow_html=True)
 
-    # 2. المستشار المالي
-    st.markdown(f'<div class="advisor-box">{financial_advice(conf, p1, px, p2)} (مؤشر الثقة: {conf}%)</div>', unsafe_allow_html=True)
+    # قسم المستشار المالي
     st.write("")
+    st.markdown(f"""
+    <div class="advisor-card" style="border-color: {plan['color']}">
+        <h3 style="color: {plan['color']};">{plan['msg']}</h3>
+        <p>📊 مؤشر الثقة: <b>{conf}%</b> | 🛡️ مستوى المخاطرة: <b>{plan['risk']}</b></p>
+        <hr>
+        <p style="font-size: 1.2rem;">💵 المبلغ المقترح للاستثمار: <b style="color: #10b981;">{plan['bet']:.2f}$</b></p>
+    </div>
+    """, unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
     with col1:
-        st.subheader("📊 فرص الفوز")
-        st.bar_chart(pd.DataFrame({'%': [p1, px, p2]}, index=[row['المضيف'], 'تعادل', row['الضيف']]))
+        st.subheader("📋 رادار البطاقات والأهداف")
+        st.markdown(f'<div class="stat-box">⚽ أهداف {row["المضيف"]}: {round(p1/40,1)}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="stat-box">⚽ أهداف {row["الضيف"]}: {round(p2/40,1)}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="stat-box" style="border-right-color: gold;">🟨 بطاقات {row["المضيف"]}: {round(2+p2/100,1)}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="stat-box" style="border-right-color: gold;">🟨 بطاقات {row["الضيف"]}: {round(2+p1/100,1)}</div>', unsafe_allow_html=True)
     
     with col2:
-        st.subheader("📋 رادار المباراة التفصيلي")
-        st.markdown(f'<div class="stat-box">⚽ أهداف {row["المضيف"]} المتوقعة: {xg_h}</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="stat-box">⚽ أهداف {row["الضيف"]} المتوقعة: {xg_a}</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="stat-box" style="border-right: 5px solid gold;">🟨 بطاقات {row["المضيف"]}: {cards_h}</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="stat-box" style="border-right: 5px solid gold;">🟨 بطاقات {row["الضيف"]}: {cards_a}</div>', unsafe_allow_html=True)
-        st.error(f"🟥 احتمالية طرد في المباراة: {int((1-(abs(p1-p2)/100))*30)}%")
+        st.subheader("📊 احتمالات الفوز")
+        st.bar_chart(pd.DataFrame({'%': [p1, px, p2]}, index=[row['المضيف'], 'تعادل', row['الضيف']]))
 
 else:
-    st.info("ننتظر توفر بيانات المباريات لهذه البطولة...")
+    st.warning("⚠️ لا توجد مباريات نشطة حالياً في هذه البطولة. يرجى اختيار 'Africa Cup of Nations' أو 'Premier League' من القائمة الجانبية.")
