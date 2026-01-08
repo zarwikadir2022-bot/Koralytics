@@ -5,27 +5,37 @@ import os
 from datetime import datetime, timedelta
 
 # --- 1. إعدادات الصفحة ---
-st.set_page_config(page_title="Koralytics AI | Ultimate", page_icon="💎", layout="wide")
+st.set_page_config(page_title="Koralytics AI | 10 Keys", page_icon="💎", layout="wide")
 
-# --- 2. محرك الإحصائيات ---
+# --- 2. محرك الإحصائيات (مصحح التنسيق) ---
 def safe_stat_update(feat):
     fn = f"stat_{feat}.txt"
     try:
         if not os.path.exists(fn):
-            with open(fn, "w") as f: f.write("0")
+            with open(fn, "w") as f:
+                f.write("0")
             current = 0
         else:
-            with open(fn, "r") as f: current = int(f.read().strip())
+            with open(fn, "r") as f:
+                content = f.read().strip()
+                current = int(content) if content else 0
+        
         new_val = current + 1
-        with open(fn, "w") as f: f.write(str(new_val))
+        with open(fn, "w") as f:
+            f.write(str(new_val))
         return new_val
-    except: return 0
+    except:
+        return 0
 
 def get_stat_only(feat):
     fn = f"stat_{feat}.txt"
-    if not os.path.exists(fn): return 0
-    try: with open(fn, "r") as f: return int(f.read().strip())
-    except: return 0
+    if not os.path.exists(fn):
+        return 0
+    try:
+        with open(fn, "r") as f:
+            return int(f.read().strip())
+    except:
+        return 0
 
 if 'session_tracked' not in st.session_state:
     safe_stat_update("unique_visitors")
@@ -95,8 +105,12 @@ def process_response(r):
         
         if h2h:
             dt = datetime.strptime(m['commence_time'], "%Y-%m-%dT%H:%M:%SZ") + timedelta(hours=1)
-            over_price = totals['outcomes'][0]['price'] if (totals and len(totals['outcomes']) > 0) else 1.85
-            under_price = totals['outcomes'][1]['price'] if (totals and len(totals['outcomes']) > 1) else 1.85
+            
+            over_price = 1.85
+            under_price = 1.85
+            if totals and len(totals['outcomes']) > 1:
+                over_price = totals['outcomes'][0]['price']
+                under_price = totals['outcomes'][1]['price']
             
             outcomes = h2h['outcomes']
             p1 = outcomes[0]['price']
