@@ -5,29 +5,37 @@ import os
 from datetime import datetime, timedelta
 
 # --- 1. إعدادات الصفحة ---
-st.set_page_config(page_title="Koralytics AI | Football First", page_icon="⚽", layout="wide")
+st.set_page_config(page_title="Koralytics AI | Final Fix", page_icon="⚽", layout="wide")
 
-# --- 2. محرك الإحصائيات ---
+# --- 2. محرك الإحصائيات (مصحح التنسيق) ---
 def safe_stat_update(feat):
     fn = f"stat_{feat}.txt"
     try:
         if not os.path.exists(fn):
-            with open(fn, "w") as f: f.write("0")
+            with open(fn, "w") as f:
+                f.write("0")
             current = 0
         else:
             with open(fn, "r") as f:
                 content = f.read().strip()
                 current = int(content) if content else 0
+        
         new_val = current + 1
-        with open(fn, "w") as f: f.write(str(new_val))
+        with open(fn, "w") as f:
+            f.write(str(new_val))
         return new_val
-    except: return 0
+    except:
+        return 0
 
 def get_stat_only(feat):
     fn = f"stat_{feat}.txt"
-    if not os.path.exists(fn): return 0
-    try: with open(fn, "r") as f: return int(f.read().strip())
-    except: return 0
+    if not os.path.exists(fn):
+        return 0
+    try:
+        with open(fn, "r") as f:
+            return int(f.read().strip())
+    except:
+        return 0
 
 if 'session_tracked' not in st.session_state:
     safe_stat_update("unique_visitors")
@@ -82,13 +90,19 @@ def fetch_data(l_key):
             
             if h2h:
                 dt = datetime.strptime(m['commence_time'], "%Y-%m-%dT%H:%M:%SZ") + timedelta(hours=1)
-                over_price = totals['outcomes'][0]['price'] if (totals and len(totals['outcomes']) > 0) else 1.85
-                under_price = totals['outcomes'][1]['price'] if (totals and len(totals['outcomes']) > 1) else 1.85
+                
+                over_price = 1.85
+                under_price = 1.85
+                if totals and len(totals['outcomes']) > 1:
+                    over_price = totals['outcomes'][0]['price']
+                    under_price = totals['outcomes'][1]['price']
                 
                 outcomes = h2h['outcomes']
                 p1 = outcomes[0]['price']
                 p2 = outcomes[1]['price']
-                px = outcomes[2]['price'] if len(outcomes) > 2 else 1.0
+                px = 1.0
+                if len(outcomes) > 2:
+                    px = outcomes[2]['price']
 
                 res.append({
                     "المضيف": m['home_team'], "الضيف": m['away_team'],
@@ -109,7 +123,6 @@ try:
         sports_data = s_req.json()
         sport_groups = sorted(list(set([s['group'] for s in sports_data])))
         
-        # --- التعديل هنا: وضع كرة القدم في المقدمة ---
         if 'Soccer' in sport_groups:
             sport_groups.remove('Soccer')
             sport_groups.insert(0, 'Soccer')
@@ -117,7 +130,7 @@ try:
         sel_group = st.sidebar.selectbox("🏀 نوع الرياضة", sport_groups, index=0)
         l_map = {s['title']: s['key'] for s in sports_data if s['group'] == sel_group}
         
-        # محاولة وضع كأس أفريقيا أو الدوري الإنجليزي كافتراضي إذا وجد
+        # اختيار ذكي للبطولة
         l_keys = list(l_map.keys())
         default_idx = 0
         for i, k in enumerate(l_keys):
@@ -190,4 +203,4 @@ if not df.empty:
         st.bar_chart(pd.DataFrame({'%': [prob1, probx, prob2]}, index=[row['المضيف'], 'تعادل', row['الضيف']]))
 else:
     st.warning("⚠️ لا توجد مباريات متاحة في هذه البطولة حالياً.")
-    st.info("💡 اختر بطولة أخرى من القائمة (مثلاً Africa Cup أو Premier League).")
+    st.info("💡 اختر بطولة أخرى من القائمة.")
