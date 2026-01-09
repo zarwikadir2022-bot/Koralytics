@@ -3,11 +3,15 @@ import requests
 import pandas as pd
 from datetime import datetime
 
-# --- إعدادات الصفحة ---
-st.set_page_config(page_title="Koralytics - Live AI Analysis", layout="wide")
+# --- 1. إعدادات الصفحة الأساسية ---
+st.set_page_config(
+    page_title="Koralytics Pro - Live AI",
+    page_icon="⚽",
+    layout="wide"
+)
 
-# --- دالة جلب النتائج المباشرة (Caching لتقليل استهلاك الـ API) ---
-@st.cache_data(ttl=60)  # تحديث كل دقيقة واحدة فقط
+# --- 2. دالة جلب النتائج المباشرة (محمية بـ Caching) ---
+@st.cache_data(ttl=60)  # تحديث البيانات كل 60 ثانية فقط لتوفير استهلاك الـ API
 def get_live_scores(api_key):
     url = "https://api-football-v1.p.rapidapi.com/v3/fixtures"
     querystring = {"live": "all"}
@@ -17,65 +21,84 @@ def get_live_scores(api_key):
     }
     try:
         response = requests.get(url, headers=headers, params=querystring)
-        return response.json()['response']
-    except:
+        if response.status_code == 200:
+            return response.json().get('response', [])
+        return []
+    except Exception as e:
         return []
 
-# --- واجهة المستخدم ---
-st.title("⚽ Koralytics: المختبر الإحصائي المباشر")
-st.markdown(f"**التوقيت الحالي:** {datetime.now().strftime('%H:%M')} | **الزوار:** 151 🚀")
+# --- 3. الواجهة الرسومية (Sidebar) ---
+with st.sidebar:
+    st.image("https://cdn-icons-png.flaticon.com/512/91/91503.png", width=80)
+    st.title("لوحة التحكم")
+    st.metric(label="إجمالي الزوار الآن", value="151", delta="🚀")
+    st.metric(label="تحليلات اليوم", value="125", delta="📈")
+    st.divider()
+    st.info("Koralytics يستخدم الذكاء الاصطناعي لتحليل المباريات بناءً على الإحصائيات الحية.")
 
-# --- القسم الأول: النتائج المباشرة (الخاصية الجديدة) ---
-st.header("🏟️ المباريات الجارية الآن")
-API_KEY = "ضع_مفتاحك_هنا" # استبدله بمفتاحك من RapidAPI
+# --- 4. الجزء العلوي: النتائج المباشرة ---
+st.title("🏟️ النتائج المباشرة والتحليل الذكي")
+st.write(f"توقيت تونس: {datetime.now().strftime('%H:%M')}")
 
-live_data = get_live_scores(API_KEY)
+# أدخل مفتاحك هنا
+API_KEY = "ضع_مفتاحك_هنا" 
 
-if live_data:
-    cols = st.columns(len(live_data) if len(live_data) < 3 else 3)
-    for idx, match in enumerate(live_data[:6]): # عرض أول 6 مباريات مباشرة
-        with cols[idx % 3]:
-            home = match['teams']['home']['name']
-            away = match['teams']['away']['name']
-            score_h = match['goals']['home']
-            score_a = match['goals']['away']
-            time = match['fixture']['status']['elapsed']
+st.subheader("📺 مباريات جارية الآن")
+live_matches = get_live_scores(API_KEY)
+
+if live_matches:
+    # عرض المباريات في أعمدة جذابة
+    cols = st.columns(3)
+    for i, match in enumerate(live_matches[:6]): # عرض أهم 6 مباريات مباشرة
+        with cols[i % 3]:
+            home_team = match['teams']['home']['name']
+            away_team = match['teams']['away']['name']
+            home_score = match['goals']['home']
+            away_score = match['goals']['away']
+            elapsed = match['fixture']['status']['elapsed']
+            league = match['league']['name']
             
-            st.info(f"**{home}** {score_h} - {score_a} **{away}** \n\n ⏱️ الدقيقة: {time}'")
-            if st.button(f"تحليل مباراة {home}", key=f"btn_{idx}"):
-                st.session_state['target_match'] = f"{home} vs {away}"
+            with st.container(border=True):
+                st.caption(f"🏆 {league}")
+                st.markdown(f"**{home_team}** {home_score} - {away_score} **{away_team}**")
+                st.markdown(f"⏱️ `الدقيقة: {elapsed}'` ")
+                if st.button(f"تحليل {home_team}", key=f"btn_{i}"):
+                    st.session_state['selected_match'] = f"{home_team} vs {away_team}"
 else:
-    st.warning("لا توجد مباريات مباشرة حالياً أو المفتاح غير مفعل.")
+    st.warning("لا توجد مباريات مباشرة حالياً أو يرجى التحقق من مفتاح الـ API.")
 
 st.divider()
 
-# --- القسم الثاني: نظام التحليل بالذكاء الاصطناعي (ChatGPT) ---
-st.header("🤖 مستشار التحليل الذكي")
-col_input, col_stats = st.columns([1, 1])
+# --- 5. الجزء الأوسط: مختبر التحليل بالذكاء الاصطناعي ---
+st.header("🤖 مختبر Koralytics للتحليل")
 
-with col_input:
-    match_name = st.text_input("اسم المباراة (مثلاً: السنغال ضد مالي)", 
-                              value=st.session_state.get('target_match', ''))
-    stats_input = st.text_area("أدخل الإحصائيات الحالية (الاستحواذ، التسديدات...)", 
-                               placeholder="الاستحواذ 60%، ركنيات 5...")
+col_left, col_right = st.columns([1.2, 0.8])
+
+with col_left:
+    selected = st.session_state.get('selected_match', '')
+    match_input = st.text_input("المباراة المستهدفة:", value=selected)
     
-    if st.button("إجراء التحليل العميق 🔍"):
-        with st.spinner('جاري تحليل البيانات برادار Koralytics...'):
-            # هنا تضع كود الربط مع OpenAI الذي تملكه سابقاً
-            st.success(f"تحليل مباراة {match_name} جاهز!")
-            st.markdown("> **توقع النتيجة:** بناءً على الضغط الحالي، احتمالية هدف في الدقائق العشر القادمة هي 70%.")
+    stats_area = st.text_area(
+        "أدخل إحصائيات المباراة (أو الصقها هنا):",
+        placeholder="مثال: الاستحواذ 55%، التسديدات على المرمى 4، الركنيات 3...",
+        height=150
+    )
+    
+    if st.button("بدء التحليل العميق برادار AI 🔍", use_container_width=True):
+        if match_input and stats_area:
+            with st.spinner('جاري معالجة البيانات الإحصائية...'):
+                # محاكاة لرد الذكاء الاصطناعي (ChatGPT)
+                st.success("تم اكتمال التحليل!")
+                st.markdown(f"### 📋 تقرير مباراة {match_input}")
+                st.write("بناءً على المعطيات، الفريق المستضيف يضغط بقوة في المناطق الجانبية. احتمالية تسجيل هدف قبل نهاية الشوط الثاني مرتفعة بنسبة 65%.")
+        else:
+            st.error("يرجى إدخال اسم المباراة والإحصائيات أولاً.")
 
-with col_stats:
-    st.subheader("📈 الرادار الإحصائي")
-    # محاكاة لرادار القوة (يمكنك ربطه ببيانات حقيقية)
+with col_right:
+    st.subheader("📊 مؤشر القوة اللحظي")
+    # عرض رسم بياني بسيط يوضح ضغط الفريقين
     chart_data = pd.DataFrame({
-        'Team': ['Home', 'Away'],
-        'Power': [75, 45]
+        "الفريق": ["المستضيف", "الضيف"],
+        "نسبة الضغط": [70, 45]
     })
-    st.bar_chart(chart_data, x='Team', y='Power')
-
-# --- تذييل الصفحة ---
-st.sidebar.image("https://cdn-icons-png.flaticon.com/512/91/91503.png", width=100)
-st.sidebar.write("### إحصائيات المنصة اليوم")
-st.sidebar.metric("التحليلات المكتملة", "151")
-st.sidebar.metric("مشاهدات تيك توك", "286")
+    st.bar_chart(chart_
