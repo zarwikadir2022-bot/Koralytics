@@ -49,30 +49,43 @@ if 'session_tracked' not in st.session_state:
     safe_stat_update("unique_visitors")
     st.session_state['session_tracked'] = True
 
-# --- 3. CSS (التصميم المتجاوب + بانر الدعم) ---
+# --- 3. CSS (إصلاح التداخل والحواف) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
     
     * { font-family: 'Cairo', sans-serif; direction: rtl; text-align: right; box-sizing: border-box; }
     .stApp { background-color: #f8fafc; }
-    .block-container { padding-top: 1rem !important; padding-bottom: 5rem !important; }
     
-    /* بانر الدعم المادي */
-    .support-banner {
-        background-color: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe;
-        padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 20px;
-        font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    /* === 🛠 الحل الجذري للشريط === */
+    /* زيادة المسافة العلوية (Padding Top) لإبعاد الشريط عن قائمة الموقع */
+    .block-container { 
+        padding-top: 4.5rem !important; /* للحاسوب: إنزال قوي للأسفل */
+        padding-bottom: 5rem !important; 
+    }
+    
+    /* للموبايل: مسافة أقل قليلاً لكن كافية */
+    @media (max-width: 768px) {
+        .block-container { 
+            padding-top: 3.5rem !important; 
+        }
     }
     
     /* حاوية الشريط */
     .ticker-container {
         background: #fbbf24; padding: 8px 0; border-bottom: 3px solid #000; 
         margin-bottom: 20px; width: 100%; overflow: hidden; white-space: nowrap;
-        border-radius: 5px; margin-top: 10px;
+        border-radius: 5px; margin-top: 0px;
+        position: relative; z-index: 1;
     }
 
-    /* بطاقة المباراة */
+    /* باقي التنسيقات (البانر والبطاقات) */
+    .support-banner {
+        background-color: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe;
+        padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 20px;
+        font-weight: bold;
+    }
+    
     .match-card {
         background: white; border-radius: 12px; padding: 15px; margin-bottom: 12px;
         border: 1px solid #e2e8f0; border-right: 5px solid #1e3a8a;
@@ -87,36 +100,20 @@ st.markdown("""
         font-weight: bold; font-size: 0.9rem; text-align: center;
         display: flex; justify-content: space-between; border: 1px solid #cbd5e1;
     }
-
-    /* شبكة الإحصائيات */
-    .stat-grid {
-        display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-        gap: 15px; margin-top: 20px;
-    }
-    .stat-box {
-        background: white; padding: 15px; border-radius: 12px;
-        border: 1px solid #e2e8f0; text-align: center;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.03);
-    }
+    
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-top: 20px; }
+    .stat-box { background: white; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center; }
     .stat-title { font-size: 0.8rem; color: #64748b; margin-bottom: 5px; display: block; }
     .stat-value { font-size: 1.2rem; font-weight: bold; color: #1e3a8a; }
 
-    /* الموبايل */
     @media (max-width: 768px) {
         .match-card { flex-direction: column; text-align: center; }
         .match-teams { width: 100%; border-bottom: 1px solid #eee; padding-bottom: 10px; }
         .match-odds { width: 100%; }
     }
 
-    /* المستشار */
     .advisor-box { padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 20px; border: 2px solid; }
-    
-    /* زر الدعم */
-    .wa-btn {
-        background: #25D366; color: white !important; display: inline-block; width: 100%;
-        padding: 10px; border-radius: 50px; font-weight: bold; text-decoration: none; margin-top: 5px;
-        text-align: center; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.4);
-    }
+    .wa-btn { background: #25D366; color: white !important; display: inline-block; width: 100%; padding: 10px; border-radius: 50px; font-weight: bold; text-decoration: none; margin-top: 5px; text-align: center; }
 </style>
 """, unsafe_allow_html=True)
 
