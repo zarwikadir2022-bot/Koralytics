@@ -147,7 +147,7 @@ budget = st.sidebar.number_input("💰 ميزانية الاستثمار ($):", 
 
 st.sidebar.markdown("---")
 st.sidebar.info("🔔 **كن أول من يعلم!**")
-st.sidebar.markdown('[انضم لقناة التليجرام (قريباً)](#)', unsafe_allow_html=True) 
+st.sidebar.markdown('[انضم لقناة التليجرام (قريباً)](https://t.me/koralyticsTN)', unsafe_allow_html=True) 
 st.sidebar.markdown("---")
 
 try:
