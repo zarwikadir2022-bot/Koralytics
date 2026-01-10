@@ -5,19 +5,19 @@ import os
 import urllib.parse
 from datetime import datetime, timedelta
 
-# --- 1. إعدادات الصفحة (Responsive Mode) ---
+# --- 1. إعدادات الصفحة (متجاوبة) ---
 st.set_page_config(
     page_title="Koralytics AI", 
     page_icon="💎", 
-    layout="wide", # استغلال كامل عرض الشاشة في الحاسوب
-    initial_sidebar_state="expanded" # القائمة تظهر تلقائياً في الحاسوب وتختفي في الهاتف
+    layout="wide", 
+    initial_sidebar_state="expanded"
 )
 
 # ==========================================
-# ⚙️ إعدادات المالك (تعديل الرقم)
+# ⚙️ إعدادات المالك (عدل رقمك هنا)
 # ==========================================
 OWNER_PHONE = "21694928912" 
-WHATSAPP_MSG = "مرحباً، أرغب في شراء كود VIP 💎"
+WHATSAPP_MSG = "مرحباً، أرغب في شراء كود VIP لتطبيق Koralytics 💎"
 wa_url = f"https://wa.me/{OWNER_PHONE}?text={urllib.parse.quote(WHATSAPP_MSG)}"
 
 # --- 2. محرك الإحصائيات ---
@@ -48,7 +48,7 @@ if 'session_tracked' not in st.session_state:
     safe_stat_update("unique_visitors")
     st.session_state['session_tracked'] = True
 
-# --- 3. CSS (التصميم الذكي المتجاوب) ---
+# --- 3. CSS (إصلاح الظهور للحاسوب والهاتف) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
@@ -56,45 +56,49 @@ st.markdown("""
     * { font-family: 'Cairo', sans-serif; direction: rtl; text-align: right; box-sizing: border-box; }
     .stApp { background-color: #f8fafc; }
     
-    /* تحسين المسافات */
-    .block-container { padding-top: 1rem !important; padding-bottom: 5rem !important; }
+    /* === 🛠 إصلاح مشكلة اختفاء الشريط === */
+    /* في الحاسوب: نزيد المسافة العلوية لكي لا يغطي شريط Streamlit على التصميم */
+    .block-container { padding-top: 3.5rem !important; padding-bottom: 5rem !important; }
     
-    /* شريط الأخبار */
+    /* في الهاتف: نقلل المسافة لأن شريط Streamlit يختفي */
+    @media (max-width: 768px) {
+        .block-container { padding-top: 1rem !important; }
+    }
+    
+    /* تصميم حاوية الشريط */
     .ticker-container {
         background: #fbbf24; padding: 8px 0; border-bottom: 3px solid #000; 
-        margin-bottom: 20px; width: 100%; overflow: hidden; white-space: nowrap;
+        margin-bottom: 25px; width: 100%; overflow: hidden; white-space: nowrap;
+        border-radius: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
 
-    /* === 1. بطاقة المباراة (Responsive Flexbox) === */
+    /* === بطاقة المباراة (متجاوبة) === */
     .match-card {
-        background: white; border-radius: 12px; padding: 15px; margin-bottom: 12px;
+        background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px;
         border: 1px solid #e2e8f0; border-right: 5px solid #1e3a8a;
         box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         
-        /* هذا السطر يجعلها مرنة */
         display: flex; 
         justify-content: space-between; 
         align-items: center; 
-        flex-wrap: wrap; /* يسمح بالعناصر بالنزول للأسفل في الشاشات الصغيرة */
-        gap: 10px;
+        flex-wrap: wrap;
+        gap: 15px;
     }
     
-    .match-teams { flex: 2; min-width: 200px; } /* الفريق يأخذ مساحة أكبر */
-    .match-odds { flex: 1; min-width: 150px; }  /* الاحتمالات تأخذ مساحة أقل */
+    .match-teams { flex: 2; min-width: 200px; }
+    .match-odds { flex: 1; min-width: 180px; }
     
-    /* تنسيق الاحتمالات */
     .odds-badge {
-        background: #f1f5f9; padding: 8px; border-radius: 8px;
+        background: #f1f5f9; padding: 10px; border-radius: 8px;
         font-weight: bold; font-size: 0.9rem; text-align: center;
-        display: flex; justify-content: space-around;
-        border: 1px solid #e2e8f0;
+        display: flex; justify-content: space-between;
+        border: 1px solid #cbd5e1;
     }
 
-    /* === 2. شبكة الإحصائيات (Responsive Grid) === */
-    /* تلقائياً: 4 أعمدة في الحاسوب، وعمودين في الهاتف */
+    /* === شبكة الإحصائيات (Grid) === */
     .stat-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
         gap: 15px;
         margin-top: 20px;
     }
@@ -110,12 +114,12 @@ st.markdown("""
     .stat-title { font-size: 0.85rem; color: #64748b; margin-bottom: 5px; display: block; }
     .stat-value { font-size: 1.3rem; font-weight: bold; color: #1e3a8a; }
 
-    /* === 3. تعديلات خاصة للموبايل فقط === */
+    /* === تعديلات خاصة للموبايل فقط === */
     @media (max-width: 768px) {
-        .match-card { flex-direction: column; text-align: center; } /* تحويل البطاقة لعمودية */
-        .match-teams { width: 100%; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 5px; }
+        .match-card { flex-direction: column; text-align: center; gap: 10px; }
+        .match-teams { width: 100%; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 0; }
         .match-odds { width: 100%; }
-        .score-banner span { font-size: 2.5rem !important; } /* تصغير خط النتيجة قليلاً */
+        .score-banner span { font-size: 2.5rem !important; }
     }
 
     /* المستشار والقفل */
@@ -123,9 +127,9 @@ st.markdown("""
     .blurred-content { filter: blur(8px); opacity: 0.6; pointer-events: none; }
     .lock-overlay {
         background: rgba(255,255,255,0.95); padding: 30px; border-radius: 20px;
-        text-align: center; border: 1px solid #ccc; margin-top: -250px; position: relative; z-index: 100;
+        text-align: center; border: 1px solid #ccc; margin-top: -280px; position: relative; z-index: 100;
         box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        max-width: 500px; margin-left: auto; margin-right: auto; /* توسيط في الحاسوب */
+        max-width: 500px; margin-left: auto; margin-right: auto;
     }
     .wa-btn {
         background: #25D366; color: white !important; display: inline-block; width: 100%; max-width: 300px;
@@ -135,7 +139,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 4. الشريط المتحرك ---
+# --- 4. الشريط المتحرك (Ticker) ---
 v_total = get_stat_only('unique_visitors') + START_VISITORS
 a_total = get_stat_only('deep_analysis') + START_ANALYSIS
 t_text = f"💎 Koralytics AI • 👤 زوار: {v_total} • 🎯 تحليلات: {a_total} • 🇹🇳 {datetime.now().strftime('%H:%M')} • 🔥 التحليل الذكي للمباريات"
@@ -143,7 +147,7 @@ t_text = f"💎 Koralytics AI • 👤 زوار: {v_total} • 🎯 تحليلا
 st.markdown(f"""
 <div class="ticker-container">
     <marquee direction="right" scrollamount="6" behavior="scroll" 
-             style="font-weight:bold; font-size:1rem; color:#000; font-family:'Cairo'; padding-top:5px;">
+             style="font-weight:bold; font-size:1rem; color:#000; font-family:'Cairo'; padding-top:4px;">
         {t_text}
     </marquee>
 </div>
@@ -174,18 +178,20 @@ def process(r):
             dt = datetime.strptime(m['commence_time'], "%Y-%m-%dT%H:%M:%SZ") + timedelta(hours=1)
             over = totals['outcomes'][0]['price'] if totals and len(totals['outcomes']) > 1 else 1.85
             oc = h2h['outcomes']
+            # التعامل مع الحالات التي لا يوجد فيها تعادل (مثل السلة)
+            px = oc[2]['price'] if len(oc) > 2 else 1.0
+            
             res.append({
                 "المضيف": m['home_team'], "الضيف": m['away_team'],
                 "التاريخ": dt.strftime("%d/%m %H:%M"), 
                 "1": oc[0]['price'], "2": oc[1]['price'], 
-                "X": oc[2]['price'] if len(oc) > 2 else 1.0,
-                "أكثر 2.5": over
+                "X": px, "أكثر 2.5": over
             })
     return pd.DataFrame(res)
 
 # --- 6. القائمة الجانبية ---
 st.sidebar.title("⚙️ الإعدادات")
-st.sidebar.markdown("### 🔐 منطقة VIP")
+st.sidebar.markdown("### 🔐 منطقة المشتركين")
 vip_in = st.sidebar.text_input("كود التفعيل:", type="password")
 
 # التحقق
@@ -193,8 +199,8 @@ admin = st.secrets.get("VIP_ACCESS_CODE", "ADMIN")
 codes = [c.strip() for c in st.secrets.get("VIP_CODES_LIST", "").replace('\n', ',').split(',') if c.strip()]
 is_vip = (vip_in == admin) or (vip_in in codes)
 
-if is_vip: st.sidebar.success("✅ مفعل")
-else: st.sidebar.warning("🔒 غير مفعل")
+if is_vip: st.sidebar.success("✅ العضوية مفعلة")
+else: st.sidebar.info("تصفح المباريات بالأسفل 👇")
 
 st.sidebar.markdown("---")
 budget = st.sidebar.number_input("💰 الميزانية ($):", 10, 10000, 100)
@@ -218,7 +224,7 @@ try:
     else: st.stop()
 except: st.stop()
 
-# --- 7. العرض الرئيسي (Main UI) ---
+# --- 7. العرض الرئيسي ---
 df = fetch_data(l_map[sel_l])
 
 if not df.empty:
@@ -226,7 +232,6 @@ if not df.empty:
     
     # === بطاقات المباريات (متجاوبة) ===
     for _, r in df.iterrows():
-        # نستخدم HTML/CSS الذي صممناه ليتجاوب
         st.markdown(f"""
         <div class="match-card">
             <div class="match-teams">
@@ -248,9 +253,8 @@ if not df.empty:
     st.markdown("---")
     st.header("🤖 التحليل الذكي (Pro)")
 
-    # === المنطق والحسابات ===
+    # === قسم التحليل ===
     if is_vip:
-        # للمشتركين: واجهة كاملة
         opts = [f"{r['المضيف']} vs {r['الضيف']}" for _, r in df.iterrows()]
         sel_m = st.selectbox("🎯 اختر مباراة للتحليل:", opts)
         row = df[df['المضيف'] == sel_m.split(" vs ")[0]].iloc[0]
@@ -286,7 +290,7 @@ if not df.empty:
         </div>
         """, unsafe_allow_html=True)
 
-        # شبكة الإحصائيات (تتجاوب تلقائياً: 4 بجانب بعض في الحاسوب، 2x2 في الهاتف)
+        # شبكة الإحصائيات (تتجاوب تلقائياً)
         st.markdown(f"""
         <div class="stat-grid">
             <div class="stat-box"><span class="stat-title">⚽ أهداف {row['المضيف']}</span><span class="stat-value">{xh}</span></div>
