@@ -2,239 +2,291 @@ import streamlit as st
 import pandas as pd
 import requests
 import os
+import urllib.parse
 from datetime import datetime, timedelta
 
 # --- 1. إعدادات الصفحة ---
-st.set_page_config(page_title="Koralytics AI | Community V77", page_icon="💎", layout="wide")
+st.set_page_config(
+    page_title="Koralytics AI", 
+    page_icon="🎁", 
+    layout="wide", 
+    initial_sidebar_state="expanded"
+)
 
-# --- 2. محرك الإحصائيات (مصحح 100%) ---
+# ==========================================
+# ⚙️ إعدادات المالك (للدعم المادي)
+# ==========================================
+OWNER_PHONE = "21694928912"  # ضع رقمك هنا
+# رسالة واتساب الجديدة
+WHATSAPP_MSG = "مرحباً، أود دعم مشروع Koralytics مادياً للاستمرار في العمل ❤️"
+wa_url = f"https://wa.me/{OWNER_PHONE}?text={urllib.parse.quote(WHATSAPP_MSG)}"
+
+# --- 2. محرك الإحصائيات (محدث بالأرقام الجديدة) ---
+START_VISITORS = 495
+START_ANALYSIS = 553
+
 def safe_stat_update(feat):
     fn = f"stat_{feat}.txt"
     try:
         if not os.path.exists(fn):
-            with open(fn, "w") as f:
-                f.write("0")
+            with open(fn, "w") as f: f.write("0")
             current = 0
         else:
-            with open(fn, "r") as f:
-                content = f.read().strip()
-                current = int(content) if content else 0
-        
+            with open(fn, "r") as f: current = int(f.read().strip() or 0)
         new_val = current + 1
-        with open(fn, "w") as f:
-            f.write(str(new_val))
+        with open(fn, "w") as f: f.write(str(new_val))
         return new_val
-    except:
-        return 0
+    except: return 0
 
 def get_stat_only(feat):
     fn = f"stat_{feat}.txt"
-    if not os.path.exists(fn):
-        return 0
+    if not os.path.exists(fn): return 0
     try:
-        with open(fn, "r") as f:
-            return int(f.read().strip())
-    except:
-        return 0
+        with open(fn, "r") as f: return int(f.read().strip())
+    except: return 0
 
 if 'session_tracked' not in st.session_state:
     safe_stat_update("unique_visitors")
     st.session_state['session_tracked'] = True
 
-# --- 3. CSS (تحسينات للإعلان) ---
+# --- 3. CSS (التصميم المتجاوب + بانر الدعم) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
-    * { font-family: 'Cairo', sans-serif; direction: rtl; text-align: right; }
-    .stApp { background: #f8fafc; }
     
-    /* شريط التنبيهات */
-    .alert-banner {
-        background-color: #fff3cd;
-        color: #856404;
-        padding: 15px;
-        border-radius: 8px;
-        border: 1px solid #ffeeba;
-        text-align: center;
-        margin-bottom: 20px;
-        font-weight: bold;
+    * { font-family: 'Cairo', sans-serif; direction: rtl; text-align: right; box-sizing: border-box; }
+    .stApp { background-color: #f8fafc; }
+    .block-container { padding-top: 1rem !important; padding-bottom: 5rem !important; }
+    
+    /* بانر الدعم المادي */
+    .support-banner {
+        background-color: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe;
+        padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 20px;
+        font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
     
-    .ticker-wrap { width: 100%; overflow: hidden; background: #fbbf24; padding: 12px 0; border-bottom: 3px solid #000; margin-bottom: 25px; }
-    .ticker { display: inline-block; white-space: nowrap; animation: ticker 30s linear infinite; font-weight: bold; color: #000; }
-    @keyframes ticker { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
-    .match-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; border-right: 6px solid #1e3a8a; transition: 0.3s; }
-    .match-card:hover { transform: scale(1.01); border-right-width: 10px; }
-    .score-banner { background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%); color: #fbbf24; padding: 30px; border-radius: 20px; text-align: center; border: 2px solid #fbbf24; margin-bottom: 20px; }
-    .stat-box { background: white; padding: 12px; border-radius: 10px; border-right: 6px solid #1e3a8a; margin-bottom: 10px; border: 1px solid #e2e8f0; font-weight: bold; color: #1e3a8a; }
-    .advisor-card { padding: 20px; border-radius: 15px; text-align: center; font-weight: bold; border: 2px solid; margin-top: 10px; }
+    /* حاوية الشريط */
+    .ticker-container {
+        background: #fbbf24; padding: 8px 0; border-bottom: 3px solid #000; 
+        margin-bottom: 20px; width: 100%; overflow: hidden; white-space: nowrap;
+        border-radius: 5px; margin-top: 10px;
+    }
+
+    /* بطاقة المباراة */
+    .match-card {
+        background: white; border-radius: 12px; padding: 15px; margin-bottom: 12px;
+        border: 1px solid #e2e8f0; border-right: 5px solid #1e3a8a;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        display: flex; justify-content: space-between; align-items: center; 
+        flex-wrap: wrap; gap: 10px;
+    }
+    .match-teams { flex: 2; min-width: 200px; }
+    .match-odds { flex: 1; min-width: 150px; }
+    .odds-badge {
+        background: #f1f5f9; padding: 8px; border-radius: 8px;
+        font-weight: bold; font-size: 0.9rem; text-align: center;
+        display: flex; justify-content: space-between; border: 1px solid #cbd5e1;
+    }
+
+    /* شبكة الإحصائيات */
+    .stat-grid {
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 15px; margin-top: 20px;
+    }
+    .stat-box {
+        background: white; padding: 15px; border-radius: 12px;
+        border: 1px solid #e2e8f0; text-align: center;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+    }
+    .stat-title { font-size: 0.8rem; color: #64748b; margin-bottom: 5px; display: block; }
+    .stat-value { font-size: 1.2rem; font-weight: bold; color: #1e3a8a; }
+
+    /* الموبايل */
+    @media (max-width: 768px) {
+        .match-card { flex-direction: column; text-align: center; }
+        .match-teams { width: 100%; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .match-odds { width: 100%; }
+    }
+
+    /* المستشار */
+    .advisor-box { padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 20px; border: 2px solid; }
+    
+    /* زر الدعم */
+    .wa-btn {
+        background: #25D366; color: white !important; display: inline-block; width: 100%;
+        padding: 10px; border-radius: 50px; font-weight: bold; text-decoration: none; margin-top: 5px;
+        text-align: center; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.4);
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 4. منطقة الإعلانات ---
-ANNOUNCEMENT_TEXT = "🔥 استمتعوا بجميع خدمات Koralytics مجاناًنرجو دعم مجهودنا ماديا كي نواصل العمل للتواصل 94928912 و شكرا ."
-SHOW_ANNOUNCEMENT = True
-
-if SHOW_ANNOUNCEMENT:
-    st.markdown(f'<div class="alert-banner">📢 {ANNOUNCEMENT_TEXT}</div>', unsafe_allow_html=True)
-
-# --- 5. العرض العلوي والعدادات ---
-v_total = get_stat_only('unique_visitors')
-a_total = get_stat_only('deep_analysis')
+# --- 4. شريط الأخبار (تعديل النص ليكون مجانياً) ---
+v_total = get_stat_only('unique_visitors') + START_VISITORS
+a_total = get_stat_only('deep_analysis') + START_ANALYSIS
+t_text = f"🎁 Koralytics AI مفتوح مجاناً للجميع لفترة محدودة • 👤 زوار: {v_total} • 🎯 تحليلات: {a_total} • 🔥 استمتعوا بالخدمة ولا تنسوا الدعم"
 
 st.markdown(f"""
-<div class="ticker-wrap"><div class="ticker">
-    <span style="padding:0 40px;">🌍 Koralytics AI: التحليل الذكي لمباريات كرة القدم</span>
-    <span style="padding:0 40px;">👤 الزوار: {v_total} | 🎯 التحليلات: {a_total}</span>
-    <span style="padding:0 40px;">🇹🇳 توقيت تونس (GMT+1)</span>
-</div></div>
+<div class="ticker-container">
+    <marquee direction="right" scrollamount="6" behavior="scroll" 
+             style="font-weight:bold; font-size:1rem; color:#000; font-family:'Cairo'; padding-top:4px;">
+        {t_text}
+    </marquee>
+</div>
 """, unsafe_allow_html=True)
 
-# --- 6. محرك الـ 10 مفاتيح ---
-ALL_KEYS = [
-    st.secrets.get("KEY1"), st.secrets.get("KEY2"), st.secrets.get("KEY3"), st.secrets.get("KEY4"), st.secrets.get("KEY5"),
-    st.secrets.get("KEY6"), st.secrets.get("KEY7"), st.secrets.get("KEY8"), st.secrets.get("KEY9"), st.secrets.get("KEY10")
-]
+# --- رسالة الدعم المادي ---
+st.markdown(f"""
+<div class="support-banner">
+    📢 استمتعوا بجميع خدمات Koralytics مجاناً! <br>
+    <span style="font-size:0.9rem; font-weight:normal;">نرجو منكم دعم المشروع مادياً لنتمكن من دفع تكاليف الخوادم والذكاء الاصطناعي ومواصلة العمل.</span>
+    <br>
+    <a href="{wa_url}" target="_blank" class="wa-btn" style="max-width:250px; margin-top:15px;">
+        ☕ لدعم المشروع (WhatsApp)
+    </a>
+</div>
+""", unsafe_allow_html=True)
+
+# --- 5. المنطق الخلفي ---
+ALL_KEYS = [st.secrets.get(f"KEY{i}") for i in range(1, 11)]
 VALID_KEYS = [k for k in ALL_KEYS if k is not None]
 
-def fetch_data_with_rotation(l_key):
-    for i, api_key in enumerate(VALID_KEYS):
+def fetch_data(l_key):
+    for api_key in VALID_KEYS:
         try:
             url = f'https://api.the-odds-api.com/v4/sports/{l_key}/odds'
             params = {'apiKey': api_key, 'regions': 'eu', 'markets': 'h2h,totals', 'oddsFormat': 'decimal'}
-            response = requests.get(url, params=params, timeout=6)
-            if response.status_code == 200:
-                return process_response(response.json())
-            elif response.status_code in [401, 429]:
-                continue
-        except:
-            continue
+            r = requests.get(url, params=params, timeout=4)
+            if r.status_code == 200: return process(r.json())
+        except: continue
     return pd.DataFrame()
 
-def process_response(r):
+def process(r):
     res = []
     for m in r:
         if not m.get('bookmakers'): continue
         mkts = m['bookmakers'][0].get('markets', [])
         h2h = next((i for i in mkts if i['key'] == 'h2h'), None)
         totals = next((i for i in mkts if i['key'] == 'totals'), None)
-        
         if h2h:
             dt = datetime.strptime(m['commence_time'], "%Y-%m-%dT%H:%M:%SZ") + timedelta(hours=1)
-            
-            over_price = 1.85
-            under_price = 1.85
-            if totals and len(totals['outcomes']) > 1:
-                over_price = totals['outcomes'][0]['price']
-                under_price = totals['outcomes'][1]['price']
-            
-            outcomes = h2h['outcomes']
-            p1 = outcomes[0]['price']
-            p2 = outcomes[1]['price']
-            px = outcomes[2]['price'] if len(outcomes) > 2 else 1.0
-
+            over = totals['outcomes'][0]['price'] if totals and len(totals['outcomes']) > 1 else 1.85
+            oc = h2h['outcomes']
+            px = oc[2]['price'] if len(oc) > 2 else 1.0
             res.append({
                 "المضيف": m['home_team'], "الضيف": m['away_team'],
-                "التاريخ": dt.strftime("%d/%m"), "الوقت": dt.strftime("%H:%M"),
-                "1": p1, "2": p2, "X": px,
-                "أكثر 2.5": over_price, "أقل 2.5": under_price
+                "التاريخ": dt.strftime("%d/%m %H:%M"), 
+                "1": oc[0]['price'], "2": oc[1]['price'], 
+                "X": px, "أكثر 2.5": over
             })
     return pd.DataFrame(res)
 
-# --- 7. القائمة الجانبية ---
-st.sidebar.title("💎 Koralytics AI")
-budget = st.sidebar.number_input("💰 ميزانية الاستثمار ($):", 10, 5000, 500)
+# --- 6. القائمة الجانبية (بدون قفل) ---
+st.sidebar.title("⚙️ الإعدادات")
+
+st.sidebar.markdown("### ❤️ دعم المشروع")
+st.sidebar.info("الخدمة مجانية بالكامل حالياً. إذا استفدت من التحليلات، يمكنك دعمنا لنستمر.")
+st.sidebar.markdown(f'<a href="{wa_url}" target="_blank" class="wa-btn">تبرع للمشروع</a>', unsafe_allow_html=True)
 
 st.sidebar.markdown("---")
-st.sidebar.info("🔔 **كن أول من يعلم!**")
-st.sidebar.markdown('[انضم لقناة التليجرام (قريباً)](https://t.me/koralyticsTN)', unsafe_allow_html=True) 
-st.sidebar.markdown("---")
+budget = st.sidebar.number_input("💰 الميزانية ($):", 10, 10000, 100)
 
+# جلب البطولات
 try:
-    sports_data = []
-    for key in VALID_KEYS:
+    s_data = []
+    for k in VALID_KEYS:
         try:
-            req = requests.get(f'https://api.the-odds-api.com/v4/sports/?apiKey={key}', timeout=5)
-            if req.status_code == 200:
-                sports_data = req.json()
-                break
+            req = requests.get(f'https://api.the-odds-api.com/v4/sports/?apiKey={k}', timeout=3)
+            if req.status_code == 200: s_data = req.json(); break
         except: continue
+    
+    if s_data:
+        grps = sorted(list(set([s['group'] for s in s_data])))
+        if 'Soccer' in grps: grps.insert(0, grps.pop(grps.index('Soccer')))
+        s_grp = st.sidebar.selectbox("الرياضة", grps)
+        l_map = {s['title']: s['key'] for s in s_data if s['group'] == s_grp}
+        def_idx = next((i for i, k in enumerate(l_map.keys()) if "Premier League" in k or "La Liga" in k), 0)
+        sel_l = st.sidebar.selectbox("البطولة", list(l_map.keys()), index=def_idx)
+    else: st.stop()
+except: st.stop()
 
-    if sports_data:
-        sport_groups = sorted(list(set([s['group'] for s in sports_data])))
-        if 'Soccer' in sport_groups:
-            sport_groups.remove('Soccer')
-            sport_groups.insert(0, 'Soccer')
-        
-        sel_group = st.sidebar.selectbox("🏀 نوع الرياضة", sport_groups, index=0)
-        l_map = {s['title']: s['key'] for s in sports_data if s['group'] == sel_group}
-        
-        l_keys = list(l_map.keys())
-        default_idx = 0
-        for i, k in enumerate(l_keys):
-            if "Africa" in k or "Premier League" in k:
-                default_idx = i
-                break
-        sel_l_name = st.sidebar.selectbox("🏆 البطولة", l_keys, index=default_idx)
-    else:
-        st.stop()
-except:
-    st.stop()
-
-# --- 8. التحليل والعرض ---
-df = fetch_data_with_rotation(l_map[sel_l_name])
+# --- 7. العرض الرئيسي (مفتوح بالكامل) ---
+df = fetch_data(l_map[sel_l])
 
 if not df.empty:
-    st.subheader(f"📅 جدول مباريات {sel_l_name}")
+    st.markdown(f"### 🔥 {sel_l}")
+    
+    # بطاقات المباريات
     for _, r in df.iterrows():
-        st.markdown(f'<div class="match-card"><div><span style="background:#1e3a8a; color:white; padding:2px 8px; border-radius:5px; font-size:0.8rem;">{r["التاريخ"]}</span> <b>{r["الوقت"]}</b><br><b>{r["المضيف"]} vs {r["الضيف"]}</b></div><div style="font-weight:bold; color:#1e3a8a;">{r["1"]} | {r["X"]} | {r["2"]}</div></div>', unsafe_allow_html=True)
+        st.markdown(f"""
+        <div class="match-card">
+            <div class="match-teams">
+                <div style="font-size:0.8rem; color:#64748b; margin-bottom:4px;">📅 {r["التاريخ"]}</div>
+                <div style="font-size:1.1rem; font-weight:bold; color:#0f172a;">
+                    {r["المضيف"]} <span style="color:#fbbf24; padding:0 5px;">VS</span> {r["الضيف"]}
+                </div>
+            </div>
+            <div class="match-odds">
+                <div class="odds-badge">
+                    <span style="color:#16a34a">1: {r["1"]}</span>
+                    <span style="color:#64748b">X: {r["X"]}</span>
+                    <span style="color:#dc2626">2: {r["2"]}</span>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
     st.markdown("---")
-    st.header("🔬 المختبر الإحصائي")
-    match_options = [f"{r['التاريخ']} | {r['الوقت']} | {r['المضيف']} ضد {r['الضيف']}" for _, r in df.iterrows()]
-    sel_match = st.selectbox("🎯 اختر مباراة للتحليل:", match_options)
-    
-    if 'curr_match' not in st.session_state or st.session_state['curr_match'] != sel_match:
+    st.header("🤖 التحليل الذكي (مفتوح مجاناً)")
+
+    # التحليل (بدون شرط VIP)
+    opts = [f"{r['المضيف']} vs {r['الضيف']}" for _, r in df.iterrows()]
+    sel_m = st.selectbox("🎯 اختر مباراة للتحليل:", opts)
+    row = df[df['المضيف'] == sel_m.split(" vs ")[0]].iloc[0]
+
+    if 'curr_m' not in st.session_state or st.session_state['curr_m'] != row['المضيف']:
         safe_stat_update("deep_analysis")
-        st.session_state['curr_match'] = sel_match
+        st.session_state['curr_m'] = row['المضيف']
 
-    match_name = sel_match.split(" | ")[2].split(" ضد ")[0]
-    row = df[df['المضيف'] == match_name].iloc[0]
-
-    p1, p2, px = (1/row['1']), (1/row['2']), (1/row['X'])
-    total_p = p1 + p2 + px
-    prob1, probx, prob2 = (p1/total_p)*100, (px/total_p)*100, (p2/total_p)*100
-    conf = min(int(max(prob1, probx, prob2) + 12), 95)
+    # الحسابات
+    p1, p2, px = (1/float(row['1'])), (1/float(row['2'])), (1/float(row['X']))
+    tot = p1 + p2 + px
+    pr1, prx, pr2 = (p1/tot)*100, (px/tot)*100, (p2/tot)*100
     
-    xg_base = 1.9 if row['أقل 2.5'] > row['أكثر 2.5'] else 3.1
-    xh, xa = round(xg_base*(prob1/100)+0.4, 1), round(xg_base*(prob2/100)+0.2, 1)
-    ch, ca = round(2.1+(prob2/100), 1), round(2.3+(prob1/100), 1)
-
-    if conf > 80: advice, color, bg = "🚀 فرصة ذهبية", "#16a34a", "#f0fdf4"
-    elif conf > 65: advice, color, bg = "⚖️ استثمار متوازن", "#2563eb", "#eff6ff"
-    else: advice, color, bg = "⚠️ مخاطرة عالية", "#dc2626", "#fef2f2"
-
-    st.markdown(f'<div class="score-banner"><small>النتيجة المتوقعة</small><br><span style="font-size:4rem;">{int(xh)} - {int(xa)}</span></div>', unsafe_allow_html=True)
+    xg_b = 1.7 if float(row['أكثر 2.5']) > 1.9 else 2.9
+    xh, xa = round(xg_b*(pr1/100)+0.4, 2), round(xg_b*(pr2/100)+0.2, 2)
+    ch, ca = round(1.5+(pr2/100)*2.5, 1), round(1.5+(pr1/100)*2.5, 1)
     
+    conf = min(int(max(pr1, prx, pr2) + 18), 99)
+    if conf > 80: clr, bg, txt = "#16a34a", "#dcfce7", "فرصة ذهبية 🔥"
+    elif conf > 60: clr, bg, txt = "#2563eb", "#eff6ff", "استثمار جيد ✅"
+    else: clr, bg, txt = "#dc2626", "#fef2f2", "مخاطرة عالية ⚠️"
+
+    # عرض النتائج
     st.markdown(f"""
-    <div class="advisor-card" style="border-color: {color}; background-color: {bg}; color: {color};">
-        <h3 style="margin:0;">💰 المستشار المالي: {advice}</h3>
-        <p style="margin:5px 0;">مؤشر الثقة: <b>{conf}%</b> | المبلغ المقترح: <b>{budget*(conf/200):.1f}$</b></p>
+    <div style="text-align:center; margin-bottom:20px;" class="score-banner">
+        <span style="font-size:4rem; font-weight:bold; color:#1e3a8a;">{int(round(xh))} - {int(round(xa))}</span>
+        <br><small style="color:#64748b;">النتيجة المتوقعة</small>
+    </div>
+    <div class="advisor-box" style="border-color:{clr}; background:{bg}; color:{clr};">
+        <h3 style="margin:0;">{txt}</h3>
+        <p style="margin:5px 0;">نسبة الأمان: <b>{conf}%</b></p>
+        <p style="margin:0;">الاستثمار المقترح: <b>{budget*(conf/300):.0f}$</b></p>
     </div>
     """, unsafe_allow_html=True)
+
+    # شبكة الإحصائيات
+    st.markdown(f"""
+    <div class="stat-grid">
+        <div class="stat-box"><span class="stat-title">⚽ أهداف {row['المضيف']}</span><span class="stat-value">{xh}</span></div>
+        <div class="stat-box"><span class="stat-title">⚽ أهداف {row['الضيف']}</span><span class="stat-value">{xa}</span></div>
+        <div class="stat-box"><span class="stat-title">🟨 بطاقات {row['المضيف']}</span><span class="stat-value">{ch}</span></div>
+        <div class="stat-box"><span class="stat-title">🟨 بطاقات {row['الضيف']}</span><span class="stat-value">{ca}</span></div>
+    </div>
+    """, unsafe_allow_html=True)
+    
     st.write("")
+    st.subheader("📊 نسب الفوز")
+    st.bar_chart(pd.DataFrame({'%': [pr1, prx, pr2]}, index=[row['المضيف'], 'تعادل', row['الضيف']]), color="#1e3a8a")
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader("📋 رادار المباراة")
-        st.markdown(f'<div class="stat-box">⚽ أهداف {row["المضيف"]} (xG): {xh}</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="stat-box">⚽ أهداف {row["الضيف"]} (xG): {xa}</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="stat-box" style="border-right-color:gold;">🟨 بطاقات {row["المضيف"]}: {ch}</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="stat-box" style="border-right-color:gold;">🟨 بطاقات {row["الضيف"]}: {ca}</div>', unsafe_allow_html=True)
-    with col2:
-        st.subheader("📊 احتمالات الفوز")
-        st.bar_chart(pd.DataFrame({'%': [prob1, probx, prob2]}, index=[row['المضيف'], 'تعادل', row['الضيف']]))
 else:
-    st.warning("⚠️ لا توجد مباريات متاحة حالياً.")
-    st.info("💡 النظام يعمل بكامل طاقته، حاول تغيير البطولة.")
-
+    st.warning("⚠️ لا توجد مباريات متاحة.")
