@@ -12,8 +12,8 @@ OWNER_PHONE = "21694928912" # عدل رقمك
 WHATSAPP_MSG = "مرحباً، جربت المباراة المجانية وأعجبتني النتيجة. أريد الاشتراك في VIP 💎"
 wa_url = f"https://wa.me/{OWNER_PHONE}?text={urllib.parse.quote(WHATSAPP_MSG)}"
 
-START_VISITORS = 1235
-START_ANALYSIS = 1364
+START_VISITORS = 3750
+START_ANALYSIS = 8620
 
 def safe_stat_update(feat):
     fn = f"stat_{feat}.txt"
