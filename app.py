@@ -25,7 +25,7 @@ wa_url = f"https://wa.me/{OWNER_PHONE}?text={urllib.parse.quote(WHATSAPP_MSG)}"
 # ==========================================
 START_VISITORS = 5120    # الزوار (بناءً على الـ 5000 السابقة)
 START_ANALYSIS = 7851    # عدد التحليلات
-START_SUBSCRIBERS = 312  # 👈 عدد المشتركين (غيّره كلما زاد العدد)
+START_SUBSCRIBERS = 320  # 👈 عدد المشتركين (غيّره كلما زاد العدد)
 
 def safe_stat_update(feat):
     fn = f"stat_{feat}.txt"
