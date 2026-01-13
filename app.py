@@ -51,7 +51,7 @@ if 'session_tracked' not in st.session_state:
     safe_stat_update("unique_visitors")
     st.session_state['session_tracked'] = True
 
-# --- 3. CSS (التصميم النظيف) ---
+# --- 3. CSS (التصميم) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
@@ -84,9 +84,9 @@ st.markdown("""
         display: flex; justify-content: space-between; border: 1px solid #cbd5e1;
     }
     
-    /* 🔥 تصميم القفل (تم التأكد من الكلاس) 🔥 */
+    /* 🔥 تصميم القفل النهائي 🔥 */
     .locked-result-box {
-        background-color: #f8fafc;
+        background-color: #ffffff;
         color: #64748b;
         padding: 8px 15px;
         border-radius: 8px;
@@ -94,7 +94,7 @@ st.markdown("""
         font-size: 0.85rem;
         text-align: center;
         border: 2px dashed #cbd5e1;
-        display: block; /* هام جداً */
+        display: block;
         width: 100%;
     }
 
@@ -214,48 +214,32 @@ try:
     else: st.stop()
 except: st.stop()
 
-# --- 7. العرض الرئيسي ---
+# --- 7. العرض الرئيسي (تم إصلاح المسافات) ---
 df = fetch_data(l_map[sel_l])
 
 if not df.empty:
     st.markdown(f"### 🔥 {sel_l}")
     
-    # === إصلاح جذري لعرض البطاقات ===
+    # حلقة العرض (بدون مسافات بادئة في النصوص لتجنب الخطأ)
     for _, r in df.iterrows():
-        # تحضير محتوى الـ Odds قبل عرضه لتجنب تداخل الأكواد
         if is_vip:
-            content_html = f"""
-            <div class="odds-badge">
-                <span style="color:#16a34a">1: {r["1"]}</span>
-                <span style="color:#64748b">X: {r["X"]}</span>
-                <span style="color:#dc2626">2: {r["2"]}</span>
-            </div>
-            """
+            content = f"""<div class="odds-badge"><span style="color:#16a34a">1: {r["1"]}</span><span style="color:#64748b">X: {r["X"]}</span><span style="color:#dc2626">2: {r["2"]}</span></div>"""
         else:
-            # استخدام div مباشر بستايل inline لضمان العرض حتى لو فشل CSS
-            content_html = """
-            <div class="locked-result-box">
-                🔒 النتيجة مخفية
-            </div>
-            """
+            content = """<div class="locked-result-box">🔒 النتيجة مخفية</div>"""
 
-        # دمج كل شيء في كتلة HTML واحدة نظيفة
-        full_card_html = f"""
-        <div class="match-card">
-            <div class="match-teams">
-                <div style="font-size:0.8rem; color:#64748b; margin-bottom:4px;">📅 {r["التاريخ"]}</div>
-                <div style="font-size:1.1rem; font-weight:bold; color:#0f172a;">
-                    {r["المضيف"]} <span style="color:#fbbf24;">VS</span> {r["الضيف"]}
-                </div>
-            </div>
-            <div class="match-odds">
-                {content_html}
-            </div>
+        st.markdown(f"""
+<div class="match-card">
+    <div class="match-teams">
+        <div style="font-size:0.8rem; color:#64748b; margin-bottom:4px;">📅 {r["التاريخ"]}</div>
+        <div style="font-size:1.1rem; font-weight:bold; color:#0f172a;">
+            {r["المضيف"]} <span style="color:#fbbf24;">VS</span> {r["الضيف"]}
         </div>
-        """
-        
-        # عرض البطاقة
-        st.markdown(full_card_html, unsafe_allow_html=True)
+    </div>
+    <div class="match-odds">
+        {content}
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
     st.markdown("---")
     st.header("🤖 المختبر الذكي (Premium)")
