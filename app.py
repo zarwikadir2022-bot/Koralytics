@@ -51,7 +51,7 @@ if 'session_tracked' not in st.session_state:
     safe_stat_update("unique_visitors")
     st.session_state['session_tracked'] = True
 
-# --- 3. CSS (التصميم الجمالي الجديد) ---
+# --- 3. CSS (التصميم الجديد المحدث - V2) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
@@ -59,7 +59,6 @@ st.markdown("""
     * { font-family: 'Cairo', sans-serif; direction: rtl; text-align: right; box-sizing: border-box; }
     .stApp { background-color: #f8fafc; }
     
-    /* ضبط المسافات */
     .block-container { padding-top: 3.5rem !important; padding-bottom: 5rem !important; }
     @media (max-width: 768px) { .block-container { padding-top: 1rem !important; } }
     
@@ -88,21 +87,21 @@ st.markdown("""
         display: flex; justify-content: space-between; border: 1px solid #cbd5e1;
     }
     
-    /* 🔥 الـ Cote المقفل (التصميم الجمالي الجديد) 🔥 */
-    .odds-locked {
-        background: #f8fafc;        /* خلفية فاتحة جداً */
-        color: #64748b;             /* لون رمادي احترافي */
-        padding: 8px 15px;
-        border-radius: 8px;
-        font-weight: bold;
-        font-size: 0.85rem;         /* خط صغير وأنيق */
-        text-align: center;
-        border: 1px dashed #cbd5e1; /* حدود متقطعة */
+    /* 🔥 تصميم القفل الجديد (تغيير الاسم لإجبار التحديث) 🔥 */
+    .locked-box-v2 {
+        background: #ffffff !important;   /* خلفية بيضاء */
+        color: #94a3b8 !important;        /* لون رمادي هادئ */
+        padding: 8px 15px !important;
+        border-radius: 8px !important;
+        font-weight: bold !important;
+        font-size: 0.85rem !important;
+        text-align: center !important;
+        border: 2px dashed #e2e8f0 !important; /* حدود متقطعة واضحة */
         display: flex;
         justify-content: center;
         align-items: center;
         gap: 6px;
-        box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
+        box-shadow: none !important;
     }
 
     /* شبكة الإحصائيات */
@@ -249,9 +248,9 @@ if not df.empty:
             </div>
             """
         else:
-            # للزوار: التصميم الجمالي الجديد
+            # للزوار: استخدام الكلاس الجديد V2
             odds_html = f"""
-            <div class="odds-locked">
+            <div class="locked-box-v2">
                 🔒 النتيجة مخفية
             </div>
             """
