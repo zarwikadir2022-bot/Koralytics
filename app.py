@@ -17,15 +17,15 @@ st.set_page_config(
 # ⚙️ إعدادات المالك (بيع الأكواد)
 # ==========================================
 OWNER_PHONE = "21694928912"  # ⚠️ ضع رقم هاتفك هنا
-WHATSAPP_MSG = "مرحباً، المنصة مغلقة وأرغب في شراء كود VIP لفتح الـ Cote والتحليل 💎"
+WHATSAPP_MSG = "مرحباً، المنصة مغلقة وأرغب في شراء كود VIP لفتح النتائج والتحليل 💎"
 wa_url = f"https://wa.me/{OWNER_PHONE}?text={urllib.parse.quote(WHATSAPP_MSG)}"
 
 # ==========================================
-# 📊 العدادات (محدثة لتعكس النجاح الأخير)
+# 📊 العدادات
 # ==========================================
 START_VISITORS = 5410    # إجمالي الزوار
 START_ANALYSIS = 7230    # إجمالي التحليلات
-START_SUBSCRIBERS = 328  # عدد المشتركين (لزيادة الثقة)
+START_SUBSCRIBERS = 328  # عدد المشتركين
 
 def safe_stat_update(feat):
     fn = f"stat_{feat}.txt"
@@ -51,7 +51,7 @@ if 'session_tracked' not in st.session_state:
     safe_stat_update("unique_visitors")
     st.session_state['session_tracked'] = True
 
-# --- 3. CSS (التصميم المتجاوب + القفل) ---
+# --- 3. CSS (التصميم الجمالي الجديد) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
@@ -59,7 +59,7 @@ st.markdown("""
     * { font-family: 'Cairo', sans-serif; direction: rtl; text-align: right; box-sizing: border-box; }
     .stApp { background-color: #f8fafc; }
     
-    /* ضبط المسافات للحاسوب والهاتف */
+    /* ضبط المسافات */
     .block-container { padding-top: 3.5rem !important; padding-bottom: 5rem !important; }
     @media (max-width: 768px) { .block-container { padding-top: 1rem !important; } }
     
@@ -88,12 +88,21 @@ st.markdown("""
         display: flex; justify-content: space-between; border: 1px solid #cbd5e1;
     }
     
-    /* الـ Cote المقفل (للزوار) */
+    /* 🔥 الـ Cote المقفل (التصميم الجمالي الجديد) 🔥 */
     .odds-locked {
-        background: #e2e8f0; color: #64748b; padding: 8px; border-radius: 8px;
-        font-weight: bold; font-size: 0.9rem; text-align: center;
-        display: flex; justify-content: center; border: 1px solid #cbd5e1;
-        letter-spacing: 1px;
+        background: #f8fafc;        /* خلفية فاتحة جداً */
+        color: #64748b;             /* لون رمادي احترافي */
+        padding: 8px 15px;
+        border-radius: 8px;
+        font-weight: bold;
+        font-size: 0.85rem;         /* خط صغير وأنيق */
+        text-align: center;
+        border: 1px dashed #cbd5e1; /* حدود متقطعة */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 6px;
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
     }
 
     /* شبكة الإحصائيات */
@@ -136,7 +145,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 4. شريط الأخبار المتحرك ---
+# --- 4. شريط الأخبار ---
 v_total = get_stat_only('unique_visitors') + START_VISITORS
 a_total = get_stat_only('deep_analysis') + START_ANALYSIS
 t_text = f"🔒 Koralytics AI: التحليل والـ Cote حصرياً للمشتركين • 👤 زوار: {v_total} • 👥 مشترك VIP: {START_SUBSCRIBERS} • 🎯 دقة التحليل: 85%"
@@ -184,7 +193,7 @@ def process(r):
             })
     return pd.DataFrame(res)
 
-# --- 6. القائمة الجانبية (VIP Login) ---
+# --- 6. القائمة الجانبية ---
 st.sidebar.title("⚙️ الإعدادات")
 
 st.sidebar.markdown("### 🔐 منطقة المشتركين")
@@ -228,7 +237,7 @@ df = fetch_data(l_map[sel_l])
 if not df.empty:
     st.markdown(f"### 🔥 {sel_l}")
     
-    # === جدول المباريات (إخفاء الـ Cote للزوار) ===
+    # === جدول المباريات ===
     for _, r in df.iterrows():
         if is_vip:
             # للمشتركين: عرض الأرقام
@@ -240,10 +249,10 @@ if not df.empty:
             </div>
             """
         else:
-            # للزوار: قفل
+            # للزوار: التصميم الجمالي الجديد
             odds_html = f"""
             <div class="odds-locked">
-                🔒 Cote VIP (مخفي)
+                🔒 النتيجة مخفية
             </div>
             """
 
@@ -269,7 +278,7 @@ if not df.empty:
     sel_m = st.selectbox("🎯 اختر مباراة للتحليل:", opts)
     row = df[df['المضيف'] == sel_m.split(" vs ")[0]].iloc[0]
 
-    # --- منطقة التحليل (Conditional) ---
+    # --- منطقة التحليل والمنع ---
     if is_vip:
         # === للمشتركين فقط ===
         if 'curr_m' not in st.session_state or st.session_state['curr_m'] != row['المضيف']:
