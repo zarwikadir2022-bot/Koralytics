@@ -7,8 +7,8 @@ from datetime import datetime, timedelta
 
 # --- 1. إعدادات الصفحة ---
 st.set_page_config(
-    page_title="Koralytics AI | VIP", 
-    page_icon="💎", 
+    page_title="Koralytics AI | VIP Only", 
+    page_icon="🔒", 
     layout="wide", 
     initial_sidebar_state="expanded"
 )
@@ -17,15 +17,15 @@ st.set_page_config(
 # ⚙️ إعدادات المالك
 # ==========================================
 OWNER_PHONE = "21694928912"  # ضع رقمك
-WHATSAPP_MSG = "مرحباً، أرغب في الانضمام للمشتركين وشراء كود VIP 💎"
+WHATSAPP_MSG = "مرحباً، أريد الاشتراك في VIP لفتح الـ Cote والتحليل 💎"
 wa_url = f"https://wa.me/{OWNER_PHONE}?text={urllib.parse.quote(WHATSAPP_MSG)}"
 
 # ==========================================
-# 📊 عدادات الثقة (تم إضافة عدد المشتركين)
+# 📊 العدادات
 # ==========================================
-START_VISITORS = 5120    # الزوار (بناءً على الـ 5000 السابقة)
-START_ANALYSIS = 7851    # عدد التحليلات
-START_SUBSCRIBERS = 321  # 👈 عدد المشتركين (غيّره كلما زاد العدد)
+START_VISITORS = 5410
+START_ANALYSIS = 7230
+START_SUBSCRIBERS = 328
 
 def safe_stat_update(feat):
     fn = f"stat_{feat}.txt"
@@ -51,7 +51,7 @@ if 'session_tracked' not in st.session_state:
     safe_stat_update("unique_visitors")
     st.session_state['session_tracked'] = True
 
-# --- 3. CSS (تصميم احترافي) ---
+# --- 3. CSS (تصميم القفل) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
@@ -79,10 +79,20 @@ st.markdown("""
     }
     .match-teams { flex: 2; min-width: 200px; }
     .match-odds { flex: 1; min-width: 150px; }
+    
+    /* تصميم الـ Cote */
     .odds-badge {
         background: #f1f5f9; padding: 8px; border-radius: 8px;
         font-weight: bold; font-size: 0.9rem; text-align: center;
         display: flex; justify-content: space-between; border: 1px solid #cbd5e1;
+    }
+    
+    /* تصميم الـ Cote المقفل */
+    .odds-locked {
+        background: #e2e8f0; color: #64748b; padding: 8px; border-radius: 8px;
+        font-weight: bold; font-size: 0.9rem; text-align: center;
+        display: flex; justify-content: center; border: 1px solid #cbd5e1;
+        letter-spacing: 2px;
     }
 
     /* شبكة الإحصائيات */
@@ -98,21 +108,20 @@ st.markdown("""
     }
 
     .advisor-box { padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 20px; border: 2px solid; }
-    .blurred-content { filter: blur(10px); opacity: 0.5; pointer-events: none; user-select: none; }
+    .blurred-content { filter: blur(12px); opacity: 0.4; pointer-events: none; user-select: none; }
     
     .lock-overlay {
-        background: rgba(255,255,255,0.98); padding: 30px; border-radius: 20px;
-        text-align: center; border: 1px solid #ccc; margin-top: -300px; position: relative; z-index: 100;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.15); max-width: 500px; margin-left: auto; margin-right: auto;
+        background: rgba(255,255,255,0.98); padding: 35px; border-radius: 20px;
+        text-align: center; border: 1px solid #ccc; margin-top: -320px; position: relative; z-index: 100;
+        box-shadow: 0 15px 50px rgba(0,0,0,0.2);
+        max-width: 500px; margin-left: auto; margin-right: auto;
     }
     
     .wa-btn {
-        background: #25D366; color: white !important; display: inline-block; width: 100%; max-width: 300px;
-        padding: 12px; border-radius: 50px; font-weight: bold; text-decoration: none; margin-top: 15px;
-        box-shadow: 0 4px 10px rgba(37, 211, 102, 0.4); text-align: center; font-size: 1.1rem;
+        background: #25D366; color: white !important; display: inline-block; width: 100%; max-width: 320px;
+        padding: 14px; border-radius: 50px; font-weight: bold; text-decoration: none; margin-top: 15px;
+        box-shadow: 0 4px 15px rgba(37, 211, 102, 0.5); text-align: center; font-size: 1.1rem;
     }
-    
-    /* شارة عدد المشتركين في القائمة الجانبية */
     .subs-badge {
         background: #dbeafe; color: #1e40af; padding: 5px 10px; border-radius: 8px;
         font-size: 0.8rem; font-weight: bold; text-align: center; margin-bottom: 10px;
@@ -121,12 +130,10 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 4. شريط الأخبار (إضافة عدد المشتركين) ---
+# --- 4. شريط الأخبار ---
 v_total = get_stat_only('unique_visitors') + START_VISITORS
 a_total = get_stat_only('deep_analysis') + START_ANALYSIS
-
-# 👈 هنا النص الجديد الذي يظهر عدد المشتركين
-t_text = f"💎 Koralytics AI VIP • 👤 زوار: {v_total} • 👥 مشترك VIP: {START_SUBSCRIBERS} • 🎯 تحليلات: {a_total} • 🔥 انضم الآن للنخبة الرابحة"
+t_text = f"🔒 Koralytics AI: التحليل والـ Cote حصرياً للمشتركين • 👤 زوار: {v_total} • 👥 مشترك VIP: {START_SUBSCRIBERS} • 🎯 دقة التحليل: 85%"
 
 st.markdown(f"""
 <div class="ticker-container">
@@ -137,7 +144,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# --- 5. المنطق الخلفي ---
+# --- 5. المنطق ---
 ALL_KEYS = [st.secrets.get(f"KEY{i}") for i in range(1, 11)]
 VALID_KEYS = [k for k in ALL_KEYS if k is not None]
 
@@ -171,12 +178,11 @@ def process(r):
             })
     return pd.DataFrame(res)
 
-# --- 6. القائمة الجانبية (مع عداد المشتركين) ---
+# --- 6. القائمة الجانبية ---
 st.sidebar.title("⚙️ الإعدادات")
 
 st.sidebar.markdown("### 🔐 منطقة المشتركين")
-# إضافة العداد هنا أيضاً للتشجيع 👇
-st.sidebar.markdown(f'<div class="subs-badge">🔥 انضم لـ {START_SUBSCRIBERS} مشترك نشط</div>', unsafe_allow_html=True)
+st.sidebar.markdown(f'<div class="subs-badge">💎 النخبة: {START_SUBSCRIBERS} مشترك</div>', unsafe_allow_html=True)
 
 vip_in = st.sidebar.text_input("🔑 كود VIP:", type="password")
 
@@ -186,12 +192,11 @@ codes = [c.strip() for c in st.secrets.get("VIP_CODES_LIST", "").replace('\n', '
 is_vip = (vip_in == admin) or (vip_in in codes)
 
 if is_vip: st.sidebar.success("✅ العضوية مفعلة")
-else: st.sidebar.warning("🔒 المحتوى مقفل")
+else: st.sidebar.error("⛔ التسجيل مطلوب")
 
 st.sidebar.markdown("---")
 budget = st.sidebar.number_input("💰 الميزانية ($):", 10, 10000, 100)
 
-# جلب البطولات
 try:
     s_data = []
     for k in VALID_KEYS:
@@ -216,35 +221,50 @@ df = fetch_data(l_map[sel_l])
 if not df.empty:
     st.markdown(f"### 🔥 {sel_l}")
     
-    # عرض الجدول
+    # === جدول المباريات (ذكي: يخفي الـ Cote لغير المشتركين) ===
     for _, r in df.iterrows():
+        if is_vip:
+            # للمشتركين: عرض الأرقام الحقيقية
+            odds_html = f"""
+            <div class="odds-badge">
+                <span style="color:#16a34a">1: {r["1"]}</span>
+                <span style="color:#64748b">X: {r["X"]}</span>
+                <span style="color:#dc2626">2: {r["2"]}</span>
+            </div>
+            """
+        else:
+            # لغير المشتركين: عرض قفل
+            odds_html = f"""
+            <div class="odds-locked">
+                🔒 Cote Hidden (VIP) 🔒
+            </div>
+            """
+
         st.markdown(f"""
         <div class="match-card">
             <div class="match-teams">
                 <div style="font-size:0.8rem; color:#64748b; margin-bottom:4px;">📅 {r["التاريخ"]}</div>
                 <div style="font-size:1.1rem; font-weight:bold; color:#0f172a;">
-                    {r["المضيف"]} <span style="color:#fbbf24; padding:0 5px;">VS</span> {r["الضيف"]}
+                    {r["المضيف"]} <span style="color:#fbbf24;">VS</span> {r["الضيف"]}
                 </div>
             </div>
             <div class="match-odds">
-                <div class="odds-badge">
-                    <span style="color:#16a34a">1: {r["1"]}</span>
-                    <span style="color:#64748b">X: {r["X"]}</span>
-                    <span style="color:#dc2626">2: {r["2"]}</span>
-                </div>
+                {odds_html}
             </div>
         </div>
         """, unsafe_allow_html=True)
 
     st.markdown("---")
-    st.header("🤖 المختبر الذكي (VIP)")
+    st.header("🤖 المختبر الذكي (Premium)")
 
+    # الاختيار
+    opts = [f"{r['المضيف']} vs {r['الضيف']}" for _, r in df.iterrows()]
+    sel_m = st.selectbox("🎯 اختر مباراة للتحليل:", opts)
+    row = df[df['المضيف'] == sel_m.split(" vs ")[0]].iloc[0]
+
+    # --- منطقة التحليل والمنع ---
     if is_vip:
-        # واجهة المشتركين
-        opts = [f"{r['المضيف']} vs {r['الضيف']}" for _, r in df.iterrows()]
-        sel_m = st.selectbox("🎯 اختر مباراة للتحليل:", opts)
-        row = df[df['المضيف'] == sel_m.split(" vs ")[0]].iloc[0]
-
+        # === للمشتركين فقط ===
         if 'curr_m' not in st.session_state or st.session_state['curr_m'] != row['المضيف']:
             safe_stat_update("deep_analysis")
             st.session_state['curr_m'] = row['المضيف']
@@ -256,8 +276,8 @@ if not df.empty:
         xg_b = 1.7 if float(row['أكثر 2.5']) > 1.9 else 2.9
         xh, xa = round(xg_b*(pr1/100)+0.4, 2), round(xg_b*(pr2/100)+0.2, 2)
         ch, ca = round(1.5+(pr2/100)*2.5, 1), round(1.5+(pr1/100)*2.5, 1)
-        
         conf = min(int(max(pr1, prx, pr2) + 18), 99)
+        
         if conf > 80: clr, bg, txt = "#16a34a", "#dcfce7", "فرصة ذهبية 🔥"
         elif conf > 60: clr, bg, txt = "#2563eb", "#eff6ff", "استثمار جيد ✅"
         else: clr, bg, txt = "#dc2626", "#fef2f2", "مخاطرة عالية ⚠️"
@@ -270,7 +290,7 @@ if not df.empty:
         <div class="advisor-box" style="border-color:{clr}; background:{bg}; color:{clr};">
             <h3 style="margin:0;">{txt}</h3>
             <p style="margin:5px 0;">نسبة الأمان: <b>{conf}%</b></p>
-            <p style="margin:0;">الاستثمار المقترح: <b>{budget*(conf/300):.0f}$</b></p>
+            <p style="margin:0;">الاستثمار: <b>{budget*(conf/300):.0f}$</b></p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -288,8 +308,8 @@ if not df.empty:
         st.bar_chart(pd.DataFrame({'%': [pr1, prx, pr2]}, index=[row['المضيف'], 'تعادل', row['الضيف']]), color="#1e3a8a")
 
     else:
-        # واجهة غير المشتركين
-        st.markdown(f"""
+        # === لغير المشتركين (شاشة الحجب الكاملة) ===
+        st.markdown("""
         <div class="blurred-content">
             <div class="advisor-box">💰 استثمار: 50$</div>
             <div class="stat-grid">
@@ -298,18 +318,18 @@ if not df.empty:
             </div>
         </div>
         <div class="lock-overlay">
-            <h2 style="color:#1e3a8a; margin-bottom:10px;">🚫 المنطقة الخاصة</h2>
-            <p style="color:#555; margin-bottom:15px; font-size:1rem;">
-                هذه الإحصائيات الدقيقة متاحة لـ <b>{START_SUBSCRIBERS} مشترك VIP</b> حالياً.
+            <h2 style="color:#1e3a8a; margin-bottom:15px;">🔒 المحتوى محجوب</h2>
+            <p style="color:#555; margin-bottom:20px; font-size:1rem;">
+                الـ Cote الدقيق، النتيجة المتوقعة، ونصيحة المستشار المالي (AI) متاحة فقط <b>للأعضاء المشتركين</b>.
             </p>
-            <a href="{wa_url}" target="_blank" class="wa-btn">
-                💎 انضم للمشتركين الآن
+            <a href="{}" target="_blank" class="wa-btn">
+                📲 شراء كود VIP الآن
             </a>
             <p style="margin-top:15px; font-size:0.8rem; color:#888;">
-                تفعيل فوري للكود • دعم فني 24/7
+                سعر رمزي • تفعيل فوري • ربح مضمون
             </p>
         </div>
-        """, unsafe_allow_html=True)
+        """.format(wa_url), unsafe_allow_html=True)
 
 else:
     st.warning("⚠️ لا توجد مباريات متاحة.")
